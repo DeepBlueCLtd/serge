@@ -129,13 +129,16 @@ export const failedLoginFeedbackMessage = (dbName, password) => {
   }
 };
 
-export const saveMessage = (dbName, details, message) => {
-  return async () => {
-
-    await wargamesApi.postNewMessage(dbName, details, message);
-
+export const saveMessage = (dbName, details, message) => ({
+  data: {
+    details,
+    message,
+  },
+  type: 'ADD_NEW_MESSAGE',
+  method(cb) {
+    return wargamesApi.postNewMessage(dbName, details, message);
   }
-};
+});
 
 
 export const getAllWargameFeedback = (dbName) => {

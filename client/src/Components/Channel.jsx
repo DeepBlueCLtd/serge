@@ -61,40 +61,37 @@ class Channel extends Component {
     this.props.dispatch(closeMessage(this.props.channel, message));
   };
 
-  // sendMultiple = () => {
+  sendMultiple = () => {
 
-  //   let count = 0;
-  //   const tenMessages = setInterval(() => {
-  //     count++;
-  //     let details = {
-  //       channel: this.props.channel,
-  //       from: {
-  //         force: this.props.playerUi.selectedForce.name,
-  //         forceColor: this.props.playerUi.forceColor,
-  //         role: this.props.playerUi.selectedRole,
-  //         icon: "",
-  //       },
-  //       messageType: "Volume test",
-  //       timestamp: new Date().toISOString(),
-  //     };
+    let count = 0;
+    const tenMessages = setInterval(() => {
+      count++;
+      let details = {
+        channel: this.props.channel,
+        from: {
+          force: this.props.playerUi.selectedForce.name,
+          forceColor: this.props.playerUi.forceColor,
+          role: this.props.playerUi.selectedRole,
+          icon: "",
+        },
+        messageType: "Volume test",
+        timestamp: new Date().toISOString(),
+      };
 
-  //     let message = {
-  //       content: lorem.generateSentences(Math.floor(Math.random()*10))
-  //     };
+      let message = {
+        content: lorem.generateSentences(Math.floor(Math.random()*10))
+      };
 
-  //     this.props.dispatch(saveMessage(this.props.playerUi.currentWargame, details, message));
+      this.props.dispatch(saveMessage(this.props.playerUi.currentWargame, details, message));
 
-  //     if (count === 100) clearInterval(tenMessages);
+      if (count === 300) clearInterval(tenMessages);
 
-  //   }, 100);
-  // };
+    }, 100);
+  };
 
   render() {
 
     // use this next lines of JSX, near "mark as read", to allow bulk insertion
-    // <button name="Send 10 messages" className="btn btn-action btn-action--secondary" onClick={this.sendMultiple}>Send Multiple</button>
-    // <span className="btn-helper">{this.props.playerUi.channels[curChannel].messages.length}</span>
-
 
     let curChannel = this.props.channel;
 
@@ -103,6 +100,8 @@ class Channel extends Component {
         <div className="forces-in-channel">
           {this.props.playerUi.channels[curChannel].forceIcons.map((url, i) => <img key={`indicator${i}`} className="force-indicator role-icon" src={url} alt="" />)}
           <button name="mark as read" className="btn btn-action btn-action--secondary" onClick={this.markAllRead}>Mark all read</button>
+          <button name="Send 10 messages" className="btn btn-action btn-action--secondary" onClick={this.sendMultiple}>Send Multiple</button>
+          <span className="btn-helper">{this.props.playerUi.channels[curChannel].messages.length}</span>
         </div>
 
         <div className="message-list">

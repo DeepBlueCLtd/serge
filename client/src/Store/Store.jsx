@@ -12,8 +12,30 @@ import { exportItems } from "../ActionsAndReducers/ExportItems/ExportItems_Reduc
 import { gameInfo } from "../ActionsAndReducers/sergeInfo/sergeInfo_Reducer";
 
 import thunk from 'redux-thunk';
+const optimisticMiddleware = () => {
+  return (next) => {
+    return (action) => {
+      const { method, ...rest } = action;
 
-const middlewares = [thunk];
+      if (!method) {
+        return next(action);
+      }
+
+      next({ ...rest, optimisticState: 'OPTIMISTIC_UPDATE_START' });
+      return method((error) => {
+        if (error) {
+          return next({
+            optimisticState: 'OPTIMISTIC_UPDATE_FAILURE',
+            ...rest
+          });
+        }
+
+        return next({ ...rest, optimisticState: 'OPTIMISTIC_UPDATE_SUCCESS' });
+      });
+    };
+  };
+};
+const middlewares = [thunk, optimisticMiddleware];
 
 if (process.env.NODE_ENV === `development`) {
   const { logger } = require(`redux-logger`);

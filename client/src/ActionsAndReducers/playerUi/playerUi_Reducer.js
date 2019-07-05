@@ -8,6 +8,46 @@ import {
 import _ from "lodash";
 import uniqId from "uniqid";
 
+const insertMessage = (channels, { optimisticState, data }) => {
+  const { details, message } = data;
+  const { channel, timestamp } = details;
+  const { content } = message;
+  const currentChannel = channels[channel];
+  switch (optimisticState) {
+    case 'OPTIMISTIC_UPDATE_FAILURE':
+    case 'OPTIMISTIC_UPDATE_SUCCESS':
+      const id = currentChannel.messages.findIndex(item => {
+        return item.details.timestamp === timestamp &&
+            item.message.content === content;
+      });
+      currentChannel.messages[id] = {
+        ...currentChannel.messages[id],
+        optimisticState,
+      };
+      return {
+        ...channels,
+        [channel]: {
+          ...currentChannel,
+          messages: [
+            ...currentChannel.messages,
+          ]
+        }
+      };
+    case 'OPTIMISTIC_UPDATE_START':
+    default:
+      channels[channel].messages = [
+          {
+            ...data,
+            optimisticState,
+          },
+          ...channels[channel].messages,
+      ];
+      return {
+        ...channels,
+      };
+  }
+};
+
 const initialState = {
   selectedForce: '',
   forceColor: '',
@@ -366,6 +406,10 @@ export const playerUiReducer = (state = initialState, action) => {
     case ActionConstant.OPEN_TOUR:
 
       newState.tourIsOpen = action.isOpen;
+      break;
+
+    case ActionConstant.ADD_NEW_MESSAGE:
+      newState.channels = insertMessage(newState.channels, action);
       break;
 
     default:
