@@ -209,7 +209,7 @@ class ForcesTab extends Component {
           </div>
 
           <div className="force-button-wrap">
-            <span className="link link--noIcon" onClick={this.saveForce}>save force</span>
+            <span className="link link--noIcon" onClick={this.saveForce} data-qa-type="save">Save Force</span>
             <span className={classNames({"link": true, "link--secondary": true, "link--disabled": isUmpire})} onClick={this.deleteForce}><FontAwesomeIcon icon={faTrash} />Delete</span>
           </div>
         </div>
@@ -241,13 +241,13 @@ class ForcesTab extends Component {
     let selectedForce = this.props.wargame.data[curTab].selectedForce.name || "";
 
     return (
-      <div className="flex-content-wrapper">
+      <div className="flex-content-wrapper" id="game-setup-tab-forces">
         <div className="flex-content searchlist-wrap">
-          <span className="link link--noIcon" onClick={this.createForce}>Add a new force</span>
+          <span className="link link--noIcon" onClick={this.createForce} data-qa-type="add">Add a new force</span>
           <TabsSearchList listData={this.state.forcesList}
-                          setSelected={this.setSelected}
-                          selected={selectedForce}
-                          delete={this.deleteForceFromList}
+            setSelected={this.setSelected}
+            selected={selectedForce}
+            delete={this.deleteForceFromList}
           />
         </div>
 

@@ -5,12 +5,6 @@ import onBeforeAll from "./helpers/onBeforeAll";
 let browser;
 let page;
 
-let backspace = async (qty) => {
-  for (let i=0 ; i<qty ; i++) {
-    await page.keyboard.press('Backspace');
-  }
-};
-
 beforeAll(async () => {
   // launch browser
   browser = await puppeteer.launch({
@@ -65,14 +59,15 @@ describe('Demo screen admin interface', () => {
       gameDescription: '[name=wargame-overview-desc]',
       saveOverview: `${anchor} [data-qa-type=submit]`,
     };
+    const overview = 'Game overview example';
     await page.waitForSelector(selectors.gameDescription);
     await page.click(selectors.gameDescription);
-    await page.type(selectors.gameDescription, 'Game overview example');
+    await page.type(selectors.gameDescription, overview);
     await page.waitForSelector(selectors.saveOverview);
     await page.click(selectors.saveOverview);
 
     wargameDesc = await page.evaluate(selectors => document.querySelector(selectors.gameDescription).value, selectors);
-    expect(wargameDesc).toBe('Game overview example');
+    expect(wargameDesc).toBe(overview);
   }, 15000);
 
   test('Enable access code', async () => {
@@ -89,5 +84,33 @@ describe('Demo screen admin interface', () => {
 
     accessCode = await page.evaluate(selectors => document.querySelector(selectors.accessCode).checked, selectors);
     expect(accessCode).toBeTruthy();
+  }, 15000);
+
+  test('Create forces', async () => {
+    let forces;
+    const anchor = '#game-setup-tab-forces';
+    const selectors = {
+      forceTab: '.tab-forces',
+      addForce: `${anchor} [data-qa-type=add]`,
+      saveForce: `${anchor} [data-qa-type=save]`,
+      forceName: '#editable-title',
+      listForces: `${anchor} .list-forces .list-title`,
+    };
+    const forceNames = ['Red Force', 'Blue Force', 'Yellow Force'];
+    await page.waitForSelector(selectors.forceTab);
+    await page.click(selectors.forceTab);
+    for(let i = 0; i < forceNames.length; i++) {
+      await page.waitForSelector(selectors.addForce);
+      await page.click(selectors.addForce);
+      await page.waitForSelector(selectors.forceName);
+      await page.click(selectors.forceName);
+      await page.evaluate(selectors => document.querySelector(selectors.forceName).value = '', selectors);
+      await page.type(selectors.forceName, forceNames[i]);
+      await page.waitForSelector(selectors.saveForce);
+      await page.click(selectors.saveForce);
+    }
+
+    forces = await page.evaluate(selectors => document.querySelectorAll(selectors.listForces).length, selectors);
+    expect(forces).toBe(forceNames.length + 1); // White force auto added
   }, 15000);
 });
