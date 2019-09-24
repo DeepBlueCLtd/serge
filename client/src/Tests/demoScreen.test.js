@@ -40,31 +40,46 @@ describe('Demo screen admin interface', () => {
   }, 15000);
 
   test('Create wargame', async () => {
-    let wargameName;
+    let wargameTitle;
+    const anchor = '#game-setup-head';
+    const title = `Demo end to end ${Date.now()}`;
     const selectors = {
       createWargame: '.game-designer-action .link:nth-of-type(1)',
+      wargameTitle: `${anchor} #title-editable`,
+      saveWargame: `${anchor} .savewargame-icon`,
     };
+    await page.waitFor(2500);
     await page.waitForSelector(selectors.createWargame);
     await page.click(selectors.createWargame);
-    await page.waitForSelector('#game-setup-head');
+    await page.waitForSelector(anchor);
+    await page.waitForSelector(selectors.wargameTitle);
+    await page.waitForFunction(selectors => document.querySelector(selectors.wargameTitle).value !== '', {}, selectors);
+    await page.click(selectors.wargameTitle);
+    await page.evaluate(selectors => document.querySelector(selectors.wargameTitle).value = '', selectors);
+    await page.type(selectors.wargameTitle, title);
+    await page.waitForSelector(selectors.saveWargame);
+    await page.click(selectors.saveWargame);
+    await page.waitForSelector('#notification');
 
-    wargameName = await page.evaluate(() => document.querySelector('#game-setup-head').length);
-    expect(wargameName).not.toBeNull();
+    wargameTitle = await page.evaluate(selectors => document.querySelector(selectors.wargameTitle).value, selectors);
+    expect(wargameTitle).toBe(title);
   }, 15000);
 
   test('Modify wargame overview description', async () => {
     let wargameDesc;
     const anchor = '#game-setup-tab-settings';
+    const overview = 'Game overview example';
     const selectors = {
       gameDescription: '[name=wargame-overview-desc]',
       saveOverview: `${anchor} [data-qa-type=submit]`,
     };
-    const overview = 'Game overview example';
+    await page.waitFor(2500);
     await page.waitForSelector(selectors.gameDescription);
     await page.click(selectors.gameDescription);
     await page.type(selectors.gameDescription, overview);
     await page.waitForSelector(selectors.saveOverview);
     await page.click(selectors.saveOverview);
+    await page.waitForSelector('#notification');
 
     wargameDesc = await page.evaluate(selectors => document.querySelector(selectors.gameDescription).value, selectors);
     expect(wargameDesc).toBe(overview);
@@ -77,10 +92,12 @@ describe('Demo screen admin interface', () => {
       accessCode: '#show-access-codes',
       saveOverview: `${anchor} [data-qa-type=submit]`,
     };
+    await page.waitFor(2500);
     await page.waitForSelector(selectors.accessCode);
     await page.click(selectors.accessCode);
     await page.waitForSelector(selectors.saveOverview);
     await page.click(selectors.saveOverview);
+    await page.waitForSelector('#notification');
 
     accessCode = await page.evaluate(selectors => document.querySelector(selectors.accessCode).checked, selectors);
     expect(accessCode).toBeTruthy();
@@ -93,22 +110,27 @@ describe('Demo screen admin interface', () => {
       forceTab: '.tab-forces',
       addForce: `${anchor} [data-qa-type=add]`,
       saveForce: `${anchor} [data-qa-type=save]`,
-      forceName: '#editable-title',
+      forceName: `${anchor} #editable-title`,
       listForces: `${anchor} .list-forces .list-title`,
     };
     const forceNames = ['Red Force', 'Blue Force', 'Yellow Force'];
     await page.waitForSelector(selectors.forceTab);
     await page.click(selectors.forceTab);
-    for(let i = 0; i < forceNames.length; i++) {
-      await page.waitForSelector(selectors.addForce);
-      await page.click(selectors.addForce);
-      await page.waitForSelector(selectors.forceName);
-      await page.click(selectors.forceName);
-      await page.evaluate(selectors => document.querySelector(selectors.forceName).value = '', selectors);
-      await page.type(selectors.forceName, forceNames[i]);
-      await page.waitForSelector(selectors.saveForce);
-      await page.click(selectors.saveForce);
-    }
+    await (async () => {
+      for(let i = 0; i < forceNames.length; i++) {
+        await page.waitFor(2500);
+        await page.waitForSelector(selectors.addForce);
+        await page.click(selectors.addForce);
+        await page.waitForSelector(selectors.forceName);
+        await page.waitForFunction(selectors => document.querySelector(selectors.forceName).value !== '', {}, selectors);
+        await page.click(selectors.forceName);
+        await page.evaluate(selectors => document.querySelector(selectors.forceName).value = '', selectors);
+        await page.type(selectors.forceName, forceNames[i]);
+        await page.waitForSelector(selectors.saveForce);
+        await page.click(selectors.saveForce);
+        await page.waitForSelector('#notification');
+      }
+    })();
 
     forces = await page.evaluate(selectors => document.querySelectorAll(selectors.listForces).length, selectors);
     expect(forces).toBe(forceNames.length + 1); // White force auto added
