@@ -1,35 +1,28 @@
-import React, { Component } from 'react';
+import React, { Component } from "react";
 import { connect } from "react-redux";
-
-import {
-  addRecipientToChannel,
-  updateRecipient,
-  removeRecipient,
-} from "../../ActionsAndReducers/dbWargames/wargames_ActionCreators.js";
-
-import EditSubscriptionRow from "./EditSubscriptionRow";
+import _ from "lodash";
+import classNames from "classnames";
 import Select from "react-select";
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faTrash,
   faPencilAlt,
   faUndoAlt,
   faCheck,
 } from "@fortawesome/free-solid-svg-icons";
-
-import _ from "lodash";
-import classNames from "classnames";
+import EditSubscriptionRow from "./EditSubscriptionRow";
 import deepCopy from "../../Helpers/copyStateHelper";
-
-import {setTabUnsaved} from "../../ActionsAndReducers/dbWargames/wargames_ActionCreators";
+import { setTabUnsaved } from "../../ActionsAndReducers/dbWargames/wargames_ActionCreators";
+import {
+  addRecipientToChannel,
+  updateRecipient,
+  removeRecipient,
+} from "../../ActionsAndReducers/dbWargames/wargames_ActionCreators.js";
 
 class ChannelsTable extends Component {
-
   constructor(props) {
     super(props);
-
     let forceOptions = this.props.wargame.data.forces.forces.map((f) => ({ value: f.uniqid, label: f.name }));
-
     let templateOptions = this.props.messageTypes.messages.map((messageType) => {
       return {
         value: messageType._id,
@@ -52,13 +45,9 @@ class ChannelsTable extends Component {
   }
 
   componentWillUpdate(nextProps, nextState, nextContext) {
-
     if (nextState.selectedForce.value === null) return;
-
     if (this.state.selectedForce.value !== nextState.selectedForce.value) {
-
       let roleOptions = [];
-
       let roles = this.props.wargame.data.forces.forces.find((f) => f.uniqid === nextState.selectedForce.value).roles;
 
       roles.forEach((role) => {
@@ -85,22 +74,17 @@ class ChannelsTable extends Component {
   }
 
   createRow(rowData, i) {
-
     let data = deepCopy(rowData);
-
     let row = [];
     let key = 0;
     for (var prop in data) {
-
       if (prop === "subscriptionId") continue;
       if (prop === "forceUniqid") continue;
       if (prop === "icon") continue;
-
       key++;
 
       var value = '';
       if (typeof data[prop] !== "string") {
-
         for (var j=0 ; j<data[prop].length ; j++) {
           let item = data[prop][j];
           value += item.label;
@@ -171,7 +155,6 @@ class ChannelsTable extends Component {
   };
 
   addToChannel = () => {
-
     if (!this.state.selectedForce.value) return;
 
     let templateIds = this.state.selectedTemplates.map((template) => ({_id: template.value}));
@@ -187,7 +170,6 @@ class ChannelsTable extends Component {
     };
     this.props.dispatch(setTabUnsaved());
     this.props.dispatch(addRecipientToChannel(recipient));
-
     this.setState({
       selectedForce: {value: null, label: null},
       selectedRoles: [],
@@ -204,7 +186,6 @@ class ChannelsTable extends Component {
   };
 
   render() {
-
     return (
       <div className="flex-content">
         <table>
@@ -217,46 +198,57 @@ class ChannelsTable extends Component {
           </thead>
           <tbody>
             {this.props.data.map((data, i) => {
-              return data.subscriptionId === this.state.subscriptionToEdit ? <EditSubscriptionRow
-                                                                                  key={data.subscriptionId}
-                                                                                  data={data}
-                                                                                  forcesList={this.props.wargame.data.forces.forces}
-                                                                                  messageTypes={this.props.messageTypes}
-                                                                                  forceOptions={this.state.forceOptions}
-                                                                                  roleOptions={this.state.roleOptions}
-                                                                                  templateOptions={this.state.templateOptions}
-                                                                                  cancelEdit={this.cancelEdit}
-                                                                                  updateRecipient={this.updateRecipient}
-                                                                            /> : this.createRow(data, i);
+              return data.subscriptionId === this.state.subscriptionToEdit ?
+                <EditSubscriptionRow
+                  key={data.subscriptionId}
+                  data={data}
+                  forcesList={this.props.wargame.data.forces.forces}
+                  messageTypes={this.props.messageTypes}
+                  forceOptions={this.state.forceOptions}
+                  roleOptions={this.state.roleOptions}
+                  templateOptions={this.state.templateOptions}
+                  cancelEdit={this.cancelEdit}
+                  updateRecipient={this.updateRecipient}
+                /> : this.createRow(data, i);
             })}
             <tr>
               <td>
-                <Select
-                  name="force-selection"
-                  value={this.state.selectedForce}
-                  options={this.state.forceOptions}
-                  onChange={this.setSelectedForce}
-                />
+                <div id="custom-select-force-selection">
+                  <Select
+                    name="force-selection"
+                    value={this.state.selectedForce}
+                    className="react-select"
+                    classNamePrefix="react-select"
+                    options={this.state.forceOptions}
+                    onChange={this.setSelectedForce}
+                  />
+                </div>
               </td>
               <td>
-                <Select
-                  name="role-selection"
-                  value={this.state.selectedRoles}
-                  options={this.state.roleOptions}
-                  onChange={this.setSelectedRole}
-                  // isDisabled={!this.state.selectedForce.value}
-                  isMulti
-                />
+                <div id="custom-select-role-selection">
+                  <Select
+                    name="role-selection"
+                    value={this.state.selectedRoles}
+                    className="react-select"
+                    classNamePrefix="react-select"
+                    options={this.state.roleOptions}
+                    onChange={this.setSelectedRole}
+                    isMulti
+                  />
+                </div>
               </td>
               <td>
-                <Select
-                  name="template-selection"
-                  value={this.state.selectedTemplates}
-                  options={this.state.templateOptions}
-                  onChange={this.setSelectedTemplate}
-                  // isDisabled={this.state.selectedRoles.length === 0}
-                  isMulti
-                />
+                <div id="custom-select-template-selection">
+                  <Select
+                    name="template-selection"
+                    value={this.state.selectedTemplates}
+                    className="react-select"
+                    classNamePrefix="react-select"
+                    options={this.state.templateOptions}
+                    onChange={this.setSelectedTemplate}
+                    isMulti
+                  />
+                </div>
               </td>
               <td>
                 <FontAwesomeIcon icon={faUndoAlt} title="Delete channel" onClick={this.clearChannelData} />

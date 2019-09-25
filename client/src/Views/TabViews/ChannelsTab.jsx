@@ -1,5 +1,12 @@
-import React, { Component } from 'react';
-import {connect} from "react-redux";
+import React, { Component } from "react";
+import { connect } from "react-redux";
+import uniqid from "uniqid";
+import _ from "lodash";
+import { channelTemplate } from "../../consts";
+import checkUnique from "../../Helpers/checkUnique";
+import TabsSearchList from "../../Components/TabsSearchList";
+import TextInput from "../../Components/Inputs/TextInput";
+import ChannelsTable from "../../Components/Layout/ChannelsTable";
 import {
   setSelectedChannel,
   deleteSelectedChannel,
@@ -9,22 +16,11 @@ import {
   setTabUnsaved,
   setTabSaved,
 } from "../../ActionsAndReducers/dbWargames/wargames_ActionCreators";
-
-import {channelTemplate} from "../../consts";
-
-import '../../scss/App.scss';
-
-import TabsSearchList from "../../Components/TabsSearchList";
-import TextInput from "../../Components/Inputs/TextInput";
-import ChannelsTable from "../../Components/Layout/ChannelsTable";
-import uniqid from "uniqid";
-import _ from "lodash";
-import checkUnique from "../../Helpers/checkUnique";
-import {addNotification} from "../../ActionsAndReducers/Notification/Notification_ActionCreators";
-import {modalAction} from "../../ActionsAndReducers/Modal/Modal_ActionCreators";
+import { addNotification } from "../../ActionsAndReducers/Notification/Notification_ActionCreators";
+import { modalAction } from "../../ActionsAndReducers/Modal/Modal_ActionCreators";
+import "../../scss/App.scss";
 
 class ForcesTab extends Component {
-
   constructor(props) {
     super(props);
 
@@ -37,7 +33,6 @@ class ForcesTab extends Component {
 
 
   componentWillReceiveProps(nextProps, nextContext) {
-
     const curSelected = this.props.wargame.data[this.props.wargame.currentTab].selectedChannel.uniqid;
     const nextSelected = nextProps.wargame.data[nextProps.wargame.currentTab].selectedChannel.uniqid;
     const curPropsState = this.props.wargame.data[this.props.wargame.currentTab].channels;
@@ -57,7 +52,6 @@ class ForcesTab extends Component {
   }
 
   createChannel = () => {
-
     const curTab = this.props.wargame.currentTab;
 
     if (this.props.wargame.data[curTab].dirty) {
@@ -76,7 +70,6 @@ class ForcesTab extends Component {
   };
 
   setSelected = (channel) => {
-
     const curTab = this.props.wargame.currentTab;
 
     if (this.props.wargame.data[curTab].dirty) {
@@ -88,9 +81,7 @@ class ForcesTab extends Component {
   };
 
   filterChannels = (input) => {
-
     let value = input.target.value;
-
     let list = this.props.wargame.data[this.props.wargame.currentTab].channels;
 
     this.setState({
@@ -117,7 +108,6 @@ class ForcesTab extends Component {
   checkUnique() {
     const curTab = this.props.wargame.currentTab;
     let selectedChannel = this.props.wargame.data[curTab].selectedChannel;
-
     let channelNames = this.props.wargame.data[curTab].channels.map((force) => force.name);
         channelNames = _.pull(channelNames, selectedChannel);
 
@@ -131,15 +121,12 @@ class ForcesTab extends Component {
   saveChannel = () => {
     const curTab = this.props.wargame.currentTab;
     let selectedChannel = this.props.wargame.data[curTab].selectedChannel.name;
-
     let newChannelData = this.props.wargame.data[curTab].channels.find((c) => c.name === selectedChannel);
 
     if (typeof this.state.newChannelName === 'string' && this.state.newChannelName.length > 0) {
-
       if (!this.checkUnique()) return;
 
       this.props.dispatch(setTabSaved());
-
       this.props.dispatch(saveChannel(this.props.wargame.currentWargame, this.state.newChannelName, newChannelData, selectedChannel));
     }
 
@@ -152,23 +139,22 @@ class ForcesTab extends Component {
 
 
   render() {
-
     const curTab = this.props.wargame.currentTab;
     const selectedChannel = this.props.wargame.data[curTab].selectedChannel.name  || "";
     const channelName = typeof this.state.newChannelName === 'string' ? this.state.newChannelName : selectedChannel;
 
     return (
-      <div className="flex-content-wrapper">
+      <div className="flex-content-wrapper" id="game-setup-tab-channels">
         <div className="flex-content searchlist-wrap">
-          <span className="link link--noIcon" onClick={this.createChannel}>Add channel</span>
+          <span className="link link--noIcon" onClick={this.createChannel} data-qa-type="add">Add channel</span>
           <TabsSearchList listData={this.state.channelList}
-                          filter={this.filterChannels}
-                          searchQuery={this.state.searchQuery}
-                          setSelected={this.setSelected}
-                          selected={selectedChannel}
-                          placeholder={"Search channels"}
-                          delete={this.deleteChannel}
-                          duplicate={this.duplicateChannel}
+            filter={this.filterChannels}
+            searchQuery={this.state.searchQuery}
+            setSelected={this.setSelected}
+            selected={selectedChannel}
+            placeholder={"Search channels"}
+            delete={this.deleteChannel}
+            duplicate={this.duplicateChannel}
           />
         </div>
 
@@ -183,7 +169,7 @@ class ForcesTab extends Component {
                 data={channelName}
               />
               <div className="button-wrap-tab">
-                <span className="link link--noIcon" onClick={this.saveChannel}>save channel</span>
+                <span className="link link--noIcon" onClick={this.saveChannel} data-qa-type="save">Save Channel</span>
               </div>
             </div>
             <p className="heading--sml">Participants and messages</p>
