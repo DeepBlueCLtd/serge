@@ -255,7 +255,9 @@ class ChannelsTable extends Component {
                 <FontAwesomeIcon
                   icon={faCheck} title="Confirm channel"
                   className={classNames({"btn--disabled": !this.state.selectedForce.value})}
-                  onClick={this.addToChannel} />
+                  onClick={this.addToChannel}
+                  data-qa-type="add-participant"
+                />
               </td>
             </tr>
           </tbody>

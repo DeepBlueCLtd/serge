@@ -140,24 +140,12 @@ describe('Demo screen admin interface', () => {
     let channels;
     const anchors = {
       tab: '#game-setup-tab-channels',
-      forceSelection: '#custom-select-force-selection',
-      roleSelection: '#custom-select-role-selection',
-      templateSelection: '#custom-select-template-selection',
     };
     const selectors = {
       channelTab: '.tab-channels',
       addChannel: `${anchors.tab} [data-qa-type=add]`,
       saveChannel: `${anchors.tab} [data-qa-type=save]`,
       channelName: `${anchors.tab} #editable-title`,
-      channelForceToggle: `${anchors.forceSelection} .react-select__input`,
-      channelForceMenu: `${anchors.forceSelection} .react-select__menu`,
-      channelForceOptions: `${anchors.forceSelection} .react-select__option`,
-      channelRoleToggle: `${anchors.roleSelection} .react-select__input`,
-      channelRoleMenu: `${anchors.roleSelection} .react-select__menu`,
-      channelRoleOptions: `${anchors.roleSelection} .react-select__option`,
-      channelTemplateToggle: `${anchors.templateSelection} .react-select__input`,
-      channelTemplateMenu: `${anchors.templateSelection} .react-select__menu`,
-      channelTemplateOptions: `${anchors.templateSelection} .react-select__option`,
     };
     await page.waitForSelector(selectors.channelTab);
     await page.click(selectors.channelTab);
@@ -172,29 +160,56 @@ describe('Demo screen admin interface', () => {
     await page.waitForSelector(selectors.saveChannel);
     await page.click(selectors.saveChannel);
     await page.waitForSelector('#notification');
+  }, 15000);
+
+  test('Assign channel to force', async () => {
+    let channels;
+    const anchors = {
+      tab: '#game-setup-tab-channels',
+      forceSelection: '#custom-select-force-selection',
+      roleSelection: '#custom-select-role-selection',
+      templateSelection: '#custom-select-template-selection',
+    };
+    const selectors = {
+      channelTab: '.tab-channels',
+      saveChannel: `${anchors.tab} [data-qa-type=save]`,
+      addParticipant: `${anchors.tab} [data-qa-type=add-participant]`,
+      channelForceToggle: `${anchors.forceSelection} .react-select__input`,
+      channelForceMenu: `${anchors.forceSelection} .react-select__menu`,
+      channelForceOptions: `${anchors.forceSelection} .react-select__option`,
+      channelRoleToggle: `${anchors.roleSelection} .react-select__input`,
+      channelRoleMenu: `${anchors.roleSelection} .react-select__menu`,
+      channelRoleOptions: `${anchors.roleSelection} .react-select__option`,
+      channelTemplateToggle: `${anchors.templateSelection} .react-select__input`,
+      channelTemplateMenu: `${anchors.templateSelection} .react-select__menu`,
+      channelTemplateOptions: `${anchors.templateSelection} .react-select__option`,
+    };
+    await page.waitFor(2500);
     await page.waitForSelector(selectors.channelForceToggle);
     await page.click(selectors.channelForceToggle);
     await page.waitForSelector(selectors.channelForceMenu);
-    await page.click(selectors.channelForceMenu);
     await page.waitForSelector(selectors.channelForceOptions);
     await page.evaluate(selectors => {
-      document.querySelectorAll(selectors.channelForceOptions).find(option => option.innerText === 'White').click();
+      [...document.querySelectorAll(selectors.channelForceOptions)].find(option => option.innerText === 'White').click();
     }, selectors);
     await page.waitForSelector(selectors.channelRoleToggle);
     await page.click(selectors.channelRoleToggle);
     await page.waitForSelector(selectors.channelRoleMenu);
-    await page.click(selectors.channelRoleMenu);
     await page.waitForSelector(selectors.channelRoleOptions);
     await page.evaluate(selectors => {
-      document.querySelectorAll(selectors.channelRoleOptions).find(option => option.innerText === 'CO').click();
+      [...document.querySelectorAll(selectors.channelRoleOptions)].find(option => option.innerText === 'Game Control').click();
     }, selectors);
     await page.waitForSelector(selectors.channelTemplateToggle);
     await page.click(selectors.channelTemplateToggle);
     await page.waitForSelector(selectors.channelTemplateMenu);
-    await page.click(selectors.channelTemplateMenu);
     await page.waitForSelector(selectors.channelTemplateOptions);
     await page.evaluate(selectors => {
-      document.querySelectorAll(selectors.channelTemplateOptions).find(option => option.innerText === 'Chat').click();
+      [...document.querySelectorAll(selectors.channelTemplateOptions)].find(option => option.innerText === 'Chat').click();
     }, selectors);
+    await page.waitForSelector(selectors.addParticipant);
+    await page.click(selectors.addParticipant);
+    await page.waitForSelector(selectors.saveChannel);
+    await page.click(selectors.saveChannel);
+    await page.waitForSelector('#notification');
   }, 15000);
 });
