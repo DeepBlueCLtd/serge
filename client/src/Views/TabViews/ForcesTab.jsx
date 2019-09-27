@@ -248,6 +248,7 @@ class ForcesTab extends Component {
             setSelected={this.setSelected}
             selected={selectedForce}
             delete={this.deleteForceFromList}
+            name="forces"
           />
         </div>
 

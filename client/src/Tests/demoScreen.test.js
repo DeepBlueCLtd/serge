@@ -4,6 +4,8 @@ import { DEFAULT_SERVER } from "../consts";
 let browser;
 let page;
 let networks = {};
+const forceNames = ['Red Force', 'Blue Force', 'Yellow Force'];
+const channelNames = ['Communications', 'Weather', 'Daily Intentions'];
 
 beforeAll(async () => {
   browser = await puppeteer.launch({
@@ -21,6 +23,12 @@ beforeAll(async () => {
     await page.waitForResponse(response => {
       const request = response.request();
       return request.url().endsWith('_local/settings?') && request.method() === 'GET' && response.status() === 200
+    });
+  };
+  networks.getAllWargames = async () => {
+    await page.waitForResponse(response => {
+      const request = response.request();
+      return request.url().endsWith('_all_docs?descending=true&include_docs=true') && request.method() === 'GET' && response.status() === 200
     });
   };
 });
@@ -63,6 +71,7 @@ describe('Demo screen admin interface', () => {
       [...document.querySelectorAll(selectors.createWargame)].find(btn => btn.innerText.toLowerCase().match(/create/)).click();
     }, selectors);
     await networks.updateWargame();
+    await networks.getAllWargames();
   }, 15000);
 
   test('Modify wargame title', async () => {
@@ -135,7 +144,6 @@ describe('Demo screen admin interface', () => {
       forceName: `${anchor} #editable-title`,
       listForces: `${anchor} .list-forces .list-title`,
     };
-    const forceNames = ['Red Force', 'Blue Force', 'Yellow Force'];
     await page.waitForSelector(selectors.forceTab);
     await page.click(selectors.forceTab);
     await (async () => {
@@ -161,32 +169,41 @@ describe('Demo screen admin interface', () => {
     expect(forces).toBe(forceNames.length + 1); // White force auto added
   }, 15000);
 
-  // test('Create channel', async () => {
-  //   let channels;
-  //   const anchors = {
-  //     tab: '#game-setup-tab-channels',
-  //   };
-  //   const selectors = {
-  //     channelTab: '.tab-channels',
-  //     addChannel: `${anchors.tab} [data-qa-type=add]`,
-  //     saveChannel: `${anchors.tab} [data-qa-type=save]`,
-  //     channelName: `${anchors.tab} #editable-title`,
-  //   };
-  //   await page.waitForSelector(selectors.channelTab);
-  //   await page.click(selectors.channelTab);
-  //   await page.waitFor(2500);
-  //   await page.waitForSelector(selectors.addChannel);
-  //   await page.click(selectors.addChannel);
-  //   await page.waitForSelector(selectors.channelName);
-  //   await page.waitForFunction(selectors => document.querySelector(selectors.channelName).value !== '', {}, selectors);
-  //   await page.click(selectors.channelName);
-  //   await page.evaluate(selectors => document.querySelector(selectors.channelName).value = '', selectors);
-  //   await page.type(selectors.channelName, 'Communication');
-  //   await page.waitForSelector(selectors.saveChannel);
-  //   await page.click(selectors.saveChannel);
-  //   await page.waitForSelector('#notification');
-  // }, 15000);
-  //
+  test('Create channels', async () => {
+    let channels;
+    const anchor = '#game-setup-tab-channels';
+    const selectors = {
+      channelTab: '.tab-channels',
+      addChannel: `${anchor} [data-qa-type=add]`,
+      saveChannel: `${anchor} [data-qa-type=save]`,
+      channelName: `${anchor} #editable-title`,
+      listChannels: `${anchor} .list-channels .list-title`,
+    };
+    await page.waitForSelector(selectors.channelTab);
+    await page.click(selectors.channelTab);
+    await (async () => {
+      for (let i = 0; i < channelNames.length; i++) {
+        await page.waitForSelector(selectors.addChannel);
+        await page.click(selectors.addChannel);
+        await networks.updateWargame();
+        await networks.fetchWargame();
+        await page.waitForSelector(selectors.channelName);
+        await page.evaluate(selectors => document.querySelector(selectors.channelName).click(), selectors);
+        await page.evaluate(selectors => document.querySelector(selectors.channelName).value = '', selectors);
+        await page.type(selectors.channelName, channelNames[i]);
+        await page.waitForFunction(({selectors, channelName}) => {
+          return document.querySelector(selectors.channelName).value === channelName;
+        }, {}, {selectors, channelName: channelNames[i]});
+        await page.waitForSelector(selectors.saveChannel);
+        await page.click(selectors.saveChannel);
+        await networks.updateWargame();
+      }
+    });
+
+    channels = await page.$$eval(selectors.listChannels, el => el.length);
+    expect(channels).toBe(channelNames.length);
+  }, 15000);
+
   // test('Assign channel to force', async () => {
   //   let channels;
   //   const anchors = {

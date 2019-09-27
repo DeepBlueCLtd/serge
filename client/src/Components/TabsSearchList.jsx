@@ -49,7 +49,7 @@ class TabsSearchList extends Component {
           <input type="text" className="list-input" key="search-templates" placeholder={this.props.placeholder} onChange={ this.props.filter } value={this.props.searchQuery} />
           : false
         }
-        <div className="list-list list-forces">
+        <div className={`list-list list-${this.props.name}`}>
           {this.props.listData.map(function(item) {
               let active = item.name === that.props.selected ? 'active' : '';
 

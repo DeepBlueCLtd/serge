@@ -155,6 +155,7 @@ class ForcesTab extends Component {
             placeholder={"Search channels"}
             delete={this.deleteChannel}
             duplicate={this.duplicateChannel}
+            name="channels"
           />
         </div>
 
