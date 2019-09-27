@@ -3,6 +3,7 @@ import { DEFAULT_SERVER } from "../consts";
 
 let browser;
 let page;
+let networks = {};
 
 beforeAll(async () => {
   browser = await puppeteer.launch({
@@ -10,6 +11,18 @@ beforeAll(async () => {
     slowMo: 25,
   });
   page = await browser.newPage();
+  networks.updateWargame = async () => {
+    await page.waitForResponse(response => {
+      const request = response.request();
+      return request.url().endsWith('_local/settings') && request.method() === 'PUT' && response.status() === 201
+    });
+  };
+  networks.fetchWargame = async () => {
+    await page.waitForResponse(response => {
+      const request = response.request();
+      return request.url().endsWith('_local/settings?') && request.method() === 'GET' && response.status() === 200
+    });
+  };
 });
 
 describe('Demo screen admin interface', () => {
@@ -49,10 +62,7 @@ describe('Demo screen admin interface', () => {
     await page.evaluate(selectors => {
       [...document.querySelectorAll(selectors.createWargame)].find(btn => btn.innerText.toLowerCase().match(/create/)).click();
     }, selectors);
-    await page.waitForResponse(response => {
-      const request = response.request();
-      return request.url().endsWith('_local/settings') && request.method() === 'PUT' && response.status() === 201
-    });
+    await networks.updateWargame();
   }, 15000);
 
   test('Modify wargame title', async () => {
@@ -66,16 +76,12 @@ describe('Demo screen admin interface', () => {
     await page.waitFor(2500);
     await page.waitForSelector(anchor);
     await page.waitForSelector(selectors.wargameTitle);
-    await page.waitForFunction(selectors => document.querySelector(selectors.wargameTitle).value !== '', {}, selectors);
-    await page.click(selectors.wargameTitle);
+    await page.evaluate(selectors => document.querySelector(selectors.wargameTitle).click(), selectors);
     await page.evaluate(selectors => document.querySelector(selectors.wargameTitle).value = '', selectors);
     await page.type(selectors.wargameTitle, title);
     await page.waitForSelector(selectors.saveWargame);
     await page.click(selectors.saveWargame);
-    await page.waitForResponse(response => {
-      const request = response.request();
-      return request.url().endsWith('_local/settings') && request.method() === 'PUT' && response.status() === 201
-    });
+    await networks.updateWargame();
 
     wargameTitle = await page.$eval(selectors.wargameTitle, el => el.value);
     expect(wargameTitle).toBe(title);
@@ -95,10 +101,7 @@ describe('Demo screen admin interface', () => {
     await page.type(selectors.gameDescription, overview);
     await page.waitForSelector(selectors.saveOverview);
     await page.click(selectors.saveOverview);
-    await page.waitForResponse(response => {
-      const request = response.request();
-      return request.url().endsWith('_local/settings') && request.method() === 'PUT' && response.status() === 201
-    });
+    await networks.updateWargame();
 
     wargameDesc = await page.$eval(selectors.gameDescription, el => el.value);
     expect(wargameDesc).toBe(overview);
@@ -116,10 +119,7 @@ describe('Demo screen admin interface', () => {
     await page.click(selectors.accessCode);
     await page.waitForSelector(selectors.saveOverview);
     await page.click(selectors.saveOverview);
-    await page.waitForResponse(response => {
-      const request = response.request();
-      return request.url().endsWith('_local/settings') && request.method() === 'PUT' && response.status() === 201
-    });
+    await networks.updateWargame();
 
     accessCode = await page.$eval(selectors.accessCode, el => el.checked);
     expect(accessCode).toBeTruthy();
@@ -140,26 +140,20 @@ describe('Demo screen admin interface', () => {
     await page.click(selectors.forceTab);
     await (async () => {
       for(let i = 0; i < forceNames.length; i++) {
-        await (async () => {
-          await page.waitFor(2500);
-          await page.waitForSelector(selectors.addForce);
-          await page.click(selectors.addForce);
-          await page.waitForResponse(response => {
-            const request = response.request();
-            return request.url().endsWith('_local/settings') && request.method() === 'PUT' && response.status() === 201
-          });
-          await page.waitForSelector(selectors.forceName);
-          await page.waitForFunction(selectors => document.querySelector(selectors.forceName).value !== '', {}, selectors);
-          await page.click(selectors.forceName);
-          await page.evaluate(selectors => document.querySelector(selectors.forceName).value = '', selectors);
-          await page.type(selectors.forceName, forceNames[i]);
-          await page.waitForSelector(selectors.saveForce);
-          await page.click(selectors.saveForce);
-          await page.waitForResponse(response => {
-            const request = response.request();
-            return request.url().endsWith('_local/settings') && request.method() === 'PUT' && response.status() === 201
-          });
-        })();
+        await page.waitForSelector(selectors.addForce);
+        await page.click(selectors.addForce);
+        await networks.updateWargame();
+        await networks.fetchWargame();
+        await page.waitForSelector(selectors.forceName);
+        await page.evaluate(selectors => document.querySelector(selectors.forceName).click(), selectors);
+        await page.evaluate(selectors => document.querySelector(selectors.forceName).value = '', selectors);
+        await page.type(selectors.forceName, forceNames[i]);
+        await page.waitForFunction(({selectors, forceName}) => {
+          return document.querySelector(selectors.forceName).value === forceName;
+        }, {}, { selectors, forceName: forceNames[i]});
+        await page.waitForSelector(selectors.saveForce);
+        await page.click(selectors.saveForce);
+        await networks.updateWargame();
       }
     })();
 
