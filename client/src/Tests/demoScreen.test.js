@@ -85,12 +85,12 @@ describe('Demo screen admin interface', () => {
     await page.waitFor(2500);
     await page.waitForSelector(anchor);
     await page.waitForSelector(selectors.wargameTitle);
-    await page.evaluate(selectors => document.querySelector(selectors.wargameTitle).click(), selectors);
-    await page.evaluate(selectors => document.querySelector(selectors.wargameTitle).value = '', selectors);
+    await page.click(selectors.wargameTitle, {clickCount: 3});
     await page.type(selectors.wargameTitle, title);
     await page.waitForSelector(selectors.saveWargame);
     await page.click(selectors.saveWargame);
     await networks.updateWargame();
+    await networks.fetchWargame();
 
     wargameTitle = await page.$eval(selectors.wargameTitle, el => el.value);
     expect(wargameTitle).toBe(title);
@@ -153,8 +153,7 @@ describe('Demo screen admin interface', () => {
         await networks.updateWargame();
         await networks.fetchWargame();
         await page.waitForSelector(selectors.forceName);
-        await page.evaluate(selectors => document.querySelector(selectors.forceName).click(), selectors);
-        await page.evaluate(selectors => document.querySelector(selectors.forceName).value = '', selectors);
+        await page.click(selectors.forceName, {clickCount: 3});
         await page.type(selectors.forceName, forceNames[i]);
         await page.waitForFunction(({selectors, forceName}) => {
           return document.querySelector(selectors.forceName).value === forceName;
@@ -162,6 +161,7 @@ describe('Demo screen admin interface', () => {
         await page.waitForSelector(selectors.saveForce);
         await page.click(selectors.saveForce);
         await networks.updateWargame();
+        await networks.fetchWargame();
       }
     })();
 
@@ -188,8 +188,7 @@ describe('Demo screen admin interface', () => {
         await networks.updateWargame();
         await networks.fetchWargame();
         await page.waitForSelector(selectors.channelName);
-        await page.evaluate(selectors => document.querySelector(selectors.channelName).click(), selectors);
-        await page.evaluate(selectors => document.querySelector(selectors.channelName).value = '', selectors);
+        await page.click(selectors.channelName, {clickCount: 3});
         await page.type(selectors.channelName, channelNames[i]);
         await page.waitForFunction(({selectors, channelName}) => {
           return document.querySelector(selectors.channelName).value === channelName;
@@ -197,8 +196,9 @@ describe('Demo screen admin interface', () => {
         await page.waitForSelector(selectors.saveChannel);
         await page.click(selectors.saveChannel);
         await networks.updateWargame();
+        await networks.fetchWargame();
       }
-    });
+    })();
 
     channels = await page.$$eval(selectors.listChannels, el => el.length);
     expect(channels).toBe(channelNames.length);
