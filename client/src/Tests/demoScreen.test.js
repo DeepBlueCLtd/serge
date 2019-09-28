@@ -4,8 +4,29 @@ import { DEFAULT_SERVER } from "../consts";
 let browser;
 let page;
 let networks = {};
-const forceNames = ['Red Force', 'Blue Force', 'Yellow Force'];
-const channelNames = ['Communications', 'Weather', 'Daily Intentions'];
+let delays = {};
+const umpireForce = {
+  name: 'White',
+  role: 'Game Control',
+};
+const customForces = [{
+  name: 'Red Force',
+  role: 'CO',
+}, {
+  name: 'Blue Force',
+  role: 'CO',
+}];
+const allForces = [
+  umpireForce,
+  ...customForces,
+];
+const allChannels = [{
+  name: 'Communication',
+  template: 'Chat',
+}, {
+  name: 'Daily intentions',
+  template: 'Daily intentions',
+}];
 
 beforeAll(async () => {
   browser = await puppeteer.launch({
@@ -31,6 +52,7 @@ beforeAll(async () => {
       return request.url().endsWith('_all_docs?descending=true&include_docs=true') && request.method() === 'GET' && response.status() === 200
     });
   };
+  delays.preTest = async () => await page.waitFor(2500);
 });
 
 describe('Demo screen admin interface', () => {
@@ -50,7 +72,7 @@ describe('Demo screen admin interface', () => {
       submit: `${anchor} .link`,
       pageTitle: '#page-title',
     };
-    await page.waitFor(2500);
+    await delays.preTest();
     await page.waitForSelector(selectors.password);
     await page.click(selectors.password);
     await page.type(selectors.password, DEFAULT_SERVER);
@@ -65,10 +87,12 @@ describe('Demo screen admin interface', () => {
     const selectors = {
       createWargame: '.game-designer-action .link',
     };
-    await page.waitFor(2500);
+    await delays.preTest();
     await page.waitForSelector(selectors.createWargame);
     await page.evaluate(selectors => {
-      [...document.querySelectorAll(selectors.createWargame)].find(btn => btn.innerText.toLowerCase().match(/create/)).click();
+      [...document.querySelectorAll(selectors.createWargame)].find(btn => {
+        return btn.innerText.match(/create/gi);
+      }).click();
     }, selectors);
     await networks.updateWargame();
     await networks.getAllWargames();
@@ -82,7 +106,7 @@ describe('Demo screen admin interface', () => {
       wargameTitle: `${anchor} #title-editable`,
       saveWargame: `${anchor} .savewargame-icon`,
     };
-    await page.waitFor(2500);
+    await delays.preTest();
     await page.waitForSelector(anchor);
     await page.waitForSelector(selectors.wargameTitle);
     await page.click(selectors.wargameTitle, {clickCount: 3});
@@ -104,7 +128,7 @@ describe('Demo screen admin interface', () => {
       gameDescription: '[name=wargame-overview-desc]',
       saveOverview: `${anchor} [data-qa-type=submit]`,
     };
-    await page.waitFor(2500);
+    await delays.preTest();
     await page.waitForSelector(selectors.gameDescription);
     await page.click(selectors.gameDescription);
     await page.type(selectors.gameDescription, overview);
@@ -123,7 +147,7 @@ describe('Demo screen admin interface', () => {
       accessCode: '#show-access-codes',
       saveOverview: `${anchor} [data-qa-type=submit]`,
     };
-    await page.waitFor(2500);
+    await delays.preTest();
     await page.waitForSelector(selectors.accessCode);
     await page.click(selectors.accessCode);
     await page.waitForSelector(selectors.saveOverview);
@@ -144,20 +168,21 @@ describe('Demo screen admin interface', () => {
       forceName: `${anchor} #editable-title`,
       listForces: `${anchor} .list-forces .list-title`,
     };
+    await delays.preTest();
     await page.waitForSelector(selectors.forceTab);
     await page.click(selectors.forceTab);
     await (async () => {
-      for(let i = 0; i < forceNames.length; i++) {
+      for(let i = 0; i < customForces.length; i++) {
         await page.waitForSelector(selectors.addForce);
         await page.click(selectors.addForce);
         await networks.updateWargame();
         await networks.fetchWargame();
         await page.waitForSelector(selectors.forceName);
         await page.click(selectors.forceName, {clickCount: 3});
-        await page.type(selectors.forceName, forceNames[i]);
+        await page.type(selectors.forceName, customForces[i].name);
         await page.waitForFunction(({selectors, forceName}) => {
           return document.querySelector(selectors.forceName).value === forceName;
-        }, {}, { selectors, forceName: forceNames[i]});
+        }, {}, { selectors, forceName: customForces[i].name});
         await page.waitForSelector(selectors.saveForce);
         await page.click(selectors.saveForce);
         await networks.updateWargame();
@@ -166,8 +191,8 @@ describe('Demo screen admin interface', () => {
     })();
 
     forces = await page.$$eval(selectors.listForces, el => el.length);
-    expect(forces).toBe(forceNames.length + 1); // White force auto added
-  }, 15000);
+    expect(forces).toBe(allForces.length); // White force auto added
+  }, 25000);
 
   test('Create channels', async () => {
     let channels;
@@ -179,20 +204,21 @@ describe('Demo screen admin interface', () => {
       channelName: `${anchor} #editable-title`,
       listChannels: `${anchor} .list-channels .list-title`,
     };
+    await delays.preTest();
     await page.waitForSelector(selectors.channelTab);
     await page.click(selectors.channelTab);
     await (async () => {
-      for (let i = 0; i < channelNames.length; i++) {
+      for (let i = 0; i < allChannels.length; i++) {
         await page.waitForSelector(selectors.addChannel);
         await page.click(selectors.addChannel);
         await networks.updateWargame();
         await networks.fetchWargame();
         await page.waitForSelector(selectors.channelName);
         await page.click(selectors.channelName, {clickCount: 3});
-        await page.type(selectors.channelName, channelNames[i]);
+        await page.type(selectors.channelName, allChannels[i].name);
         await page.waitForFunction(({selectors, channelName}) => {
           return document.querySelector(selectors.channelName).value === channelName;
-        }, {}, {selectors, channelName: channelNames[i]});
+        }, {}, {selectors, channelName: allChannels[i].name});
         await page.waitForSelector(selectors.saveChannel);
         await page.click(selectors.saveChannel);
         await networks.updateWargame();
@@ -201,57 +227,102 @@ describe('Demo screen admin interface', () => {
     })();
 
     channels = await page.$$eval(selectors.listChannels, el => el.length);
-    expect(channels).toBe(channelNames.length);
-  }, 15000);
+    expect(channels).toBe(allChannels.length);
+  }, 25000);
 
-  // test('Assign channel to force', async () => {
-  //   let channels;
-  //   const anchors = {
-  //     tab: '#game-setup-tab-channels',
-  //     forceSelection: '#custom-select-force-selection',
-  //     roleSelection: '#custom-select-role-selection',
-  //     templateSelection: '#custom-select-template-selection',
-  //   };
-  //   const selectors = {
-  //     channelTab: '.tab-channels',
-  //     saveChannel: `${anchors.tab} [data-qa-type=save]`,
-  //     addParticipant: `${anchors.tab} [data-qa-type=add-participant]`,
-  //     channelForceToggle: `${anchors.forceSelection} .react-select__input`,
-  //     channelForceMenu: `${anchors.forceSelection} .react-select__menu`,
-  //     channelForceOptions: `${anchors.forceSelection} .react-select__option`,
-  //     channelRoleToggle: `${anchors.roleSelection} .react-select__input`,
-  //     channelRoleMenu: `${anchors.roleSelection} .react-select__menu`,
-  //     channelRoleOptions: `${anchors.roleSelection} .react-select__option`,
-  //     channelTemplateToggle: `${anchors.templateSelection} .react-select__input`,
-  //     channelTemplateMenu: `${anchors.templateSelection} .react-select__menu`,
-  //     channelTemplateOptions: `${anchors.templateSelection} .react-select__option`,
-  //   };
-  //   await page.waitFor(2500);
-  //   await page.waitForSelector(selectors.channelForceToggle);
-  //   await page.click(selectors.channelForceToggle);
-  //   await page.waitForSelector(selectors.channelForceMenu);
-  //   await page.waitForSelector(selectors.channelForceOptions);
-  //   await page.evaluate(selectors => {
-  //     [...document.querySelectorAll(selectors.channelForceOptions)].find(option => option.innerText === 'White').click();
-  //   }, selectors);
-  //   await page.waitForSelector(selectors.channelRoleToggle);
-  //   await page.click(selectors.channelRoleToggle);
-  //   await page.waitForSelector(selectors.channelRoleMenu);
-  //   await page.waitForSelector(selectors.channelRoleOptions);
-  //   await page.evaluate(selectors => {
-  //     [...document.querySelectorAll(selectors.channelRoleOptions)].find(option => option.innerText === 'Game Control').click();
-  //   }, selectors);
-  //   await page.waitForSelector(selectors.channelTemplateToggle);
-  //   await page.click(selectors.channelTemplateToggle);
-  //   await page.waitForSelector(selectors.channelTemplateMenu);
-  //   await page.waitForSelector(selectors.channelTemplateOptions);
-  //   await page.evaluate(selectors => {
-  //     [...document.querySelectorAll(selectors.channelTemplateOptions)].find(option => option.innerText === 'Chat').click();
-  //   }, selectors);
-  //   await page.waitForSelector(selectors.addParticipant);
-  //   await page.click(selectors.addParticipant);
-  //   await page.waitForSelector(selectors.saveChannel);
-  //   await page.click(selectors.saveChannel);
-  //   await page.waitForSelector('#notification');
-  // }, 15000);
+  test('Assign channel to force', async () => {
+    let channels;
+    const anchors = {
+      tab: '#game-setup-tab-channels',
+      forceSelection: '#custom-select-force-selection',
+      roleSelection: '#custom-select-role-selection',
+      templateSelection: '#custom-select-template-selection',
+    };
+    const selectors = {
+      listChannels: `${anchors.tab} .list-channels .list-title`,
+      channelName: `${anchors.tab} #editable-title`,
+      saveChannel: `${anchors.tab} [data-qa-type=save]`,
+      addParticipant: `${anchors.tab} [data-qa-type=add-participant]`,
+      listParticipants: `${anchors.tab} .channel-participants-row`,
+      channelForceToggle: `${anchors.forceSelection} .react-select__input`,
+      channelForceMenu: `${anchors.forceSelection} .react-select__menu`,
+      channelForceOptions: `${anchors.forceSelection} .react-select__option`,
+      channelRoleToggle: `${anchors.roleSelection} .react-select__input`,
+      channelRoleMenu: `${anchors.roleSelection} .react-select__menu`,
+      channelRoleOptions: `${anchors.roleSelection} .react-select__option`,
+      channelTemplateToggle: `${anchors.templateSelection} .react-select__input`,
+      channelTemplateMenu: `${anchors.templateSelection} .react-select__menu`,
+      channelTemplateOptions: `${anchors.templateSelection} .react-select__option`,
+    };
+    await delays.preTest();
+    await (async () => {
+      for(let i = 0; i < allChannels.length; i++) {
+        const channelName = allChannels[i].name;
+        const channelTemplate = allChannels[i].template;
+        await page.evaluate(({selectors, channelName}) => {
+          [...document.querySelectorAll(selectors.listChannels)].find(list => {
+            const label = new RegExp(`${channelName}`, 'gi');
+            return list.innerText.match(label);
+          }).click();
+        }, {selectors, channelName});
+        await page.waitForSelector(selectors.channelName);
+        await page.waitForFunction(({selectors, channelName}) => {
+          return document.querySelector(selectors.channelName).value === channelName;
+        }, {}, {selectors, channelName});
+        await (async () => {
+          for(let j = 0; j < allForces.length; j++) {
+            const forceName = allForces[j].name;
+            const forceRole = allForces[j].role;
+            await page.waitForSelector(selectors.channelForceToggle);
+            await page.click(selectors.channelForceToggle);
+            await page.waitForSelector(selectors.channelForceMenu);
+            await page.waitForSelector(selectors.channelForceOptions);
+            await page.waitForFunction(selectors => {
+              return document.querySelectorAll(selectors.channelForceOptions).length > 0;
+            }, {}, selectors);
+            await page.evaluate(({selectors, forceName}) => {
+              [...document.querySelectorAll(selectors.channelForceOptions)].find(option => {
+                return option.innerText === forceName;
+              }).click();
+            }, {selectors, forceName});
+            await page.waitForSelector(selectors.channelRoleToggle);
+            await page.click(selectors.channelRoleToggle);
+            await page.waitForSelector(selectors.channelRoleMenu);
+            await page.waitForSelector(selectors.channelRoleOptions);
+            await page.waitForFunction(selectors => {
+              return document.querySelectorAll(selectors.channelRoleOptions).length > 0;
+            }, {}, selectors);
+            await page.evaluate(({selectors, forceRole}) => {
+              [...document.querySelectorAll(selectors.channelRoleOptions)].find(option => {
+                return option.innerText === forceRole;
+              }).click();
+            }, {selectors, forceRole});
+            await page.waitForSelector(selectors.channelTemplateToggle);
+            await page.click(selectors.channelTemplateToggle);
+            await page.waitForSelector(selectors.channelTemplateMenu);
+            await page.waitForSelector(selectors.channelTemplateOptions);
+            await page.waitForFunction(selectors => {
+              return document.querySelectorAll(selectors.channelTemplateOptions).length > 0;
+            }, {}, selectors);
+            await page.evaluate(({selectors, channelTemplate}) => {
+              [...document.querySelectorAll(selectors.channelTemplateOptions)].find(option => {
+                const label = new RegExp(`${channelTemplate}`, 'gi');
+                return option.innerText.match(label);
+              }).click();
+            }, {selectors, channelTemplate});
+            await page.waitForSelector(selectors.addParticipant);
+            await page.click(selectors.addParticipant);
+            await page.waitForSelector(selectors.listParticipants);
+            await page.waitForFunction(({selectors, currentIndex}) => {
+              return document.querySelectorAll(selectors.listParticipants).length === currentIndex;
+            }, {}, {selectors, currentIndex: j+1});
+          }
+        })();
+        await page.waitForSelector(selectors.saveChannel);
+        await page.click(selectors.saveChannel);
+        await networks.updateWargame();
+        await networks.fetchWargame();
+      }
+    })();
+  }, 25000);
 });

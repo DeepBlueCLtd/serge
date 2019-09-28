@@ -111,7 +111,7 @@ class ChannelsTable extends Component {
         <FontAwesomeIcon icon={faPencilAlt} title="Edit membership" onClick={this.editSubscription.bind(this, data.subscriptionId)} />
       </td>
     );
-    return (<tr key={`row-${i}`}>{row}</tr>);
+    return (<tr key={`row-${i}`} className="channel-participants-row">{row}</tr>);
   }
 
   removeSubscription(subscriptionId) {

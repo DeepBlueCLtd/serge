@@ -104,7 +104,7 @@ class EditSubscriptionRow extends Component {
 
   render() {
     return (
-      <tr>
+      <tr className="channel-participants-row">
         <td>
           <Select
             name="force-edit-selection"
