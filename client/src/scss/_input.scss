@@ -183,5 +183,10 @@ $md-checkbox-label-padding: .5em;
       }
     }
   }
+}
 
+#custom-select-wargame-selection {
+  width: 250px;
+  position: relative;
+  z-index: 3;
 }

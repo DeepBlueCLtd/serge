@@ -572,9 +572,9 @@ describe('PlayerUi', () => {
   //
   //   test('Should display "INITIATE GAME" button', async () => {
   //
-  //     await page.waitFor('button[name="initiate game"]');
+  //     await page.waitFor('button[name="initiate-game"]');
   //
-  //     let initiateButton = await page.evaluate(() => document.querySelector('button[name="initiate game"]').innerText);
+  //     let initiateButton = await page.evaluate(() => document.querySelector('button[name="initiate-game"]').innerText);
   //
   //     expect(initiateButton).toEqual('INITIATE GAME');
   //
@@ -737,12 +737,12 @@ describe('PlayerUi', () => {
     }, 15000);
 
 
-    test('Should initiate game', async () => {
+    test('Should initiate-game', async () => {
 
       await pageWhiteGameControl.bringToFront();
 
-      await pageWhiteGameControl.waitFor('button[name="initiate game"]');
-      await pageWhiteGameControl.evaluate(() => document.querySelector('button[name="initiate game"]').click());
+      await pageWhiteGameControl.waitFor('button[name="initiate-game"]');
+      await pageWhiteGameControl.evaluate(() => document.querySelector('button[name="initiate-game"]').click());
 
       // check is game UI
       await pageWhiteGameControl.$('.turn-progression-ui');

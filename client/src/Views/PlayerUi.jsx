@@ -182,7 +182,7 @@ class PlayerUi extends Component {
         content: () => (
           <div>
             Drag and drop a tab to create a new column and re-organize your channels. And use the vertical bars to resize the area occupied by channels.
-            <span className="link link--noIcon" onClick={this.closeTour}>Close the tour</span>
+            <span className="link link--noIcon" onClick={this.closeTour} data-qa-type="close-tour">Close the tour</span>
           </div>
         ),
       },
@@ -192,7 +192,7 @@ class PlayerUi extends Component {
       return (
         <div className="flex-content-wrapper">
           <div className="pre-start-screen">
-            <button name="initiate game" className="btn btn-action btn-action--primary" onClick={this.initiateGameplay}>Initiate Game</button>
+            <button name="initiate-game" className="btn btn-action btn-action--primary" onClick={this.initiateGameplay}>Initiate Game</button>
           </div>
         </div>
       )
@@ -259,12 +259,12 @@ class PlayerUi extends Component {
               {this.state.selectedWargame && state.showAccessCodes &&
                 <div className="demo-passwords">
                   <h3>Not visible in production</h3>
-                  <ul className="list-demo-passwords">
+                  <ul>
                     {this.roleOptions().map((force) => {
                       return (
-                        <li key={force.name} className="list-item-demo-passwords" data-qa-force-name={force.name}>
+                        <li key={force.name} className="list-item-demo-passwords">
                           <h4>{force.name}</h4>
-                          <ul>
+                          <ul data-qa-force-name={force.name}>
                             {
                               force.roles.map((role) => (
                                 <li key={role.name}>
@@ -282,7 +282,7 @@ class PlayerUi extends Component {
                   </ul>
                 </div>
               }
-              <button name="enter-wargame" disabled={!this.state.rolePassword} className="btn btn-action btn-action--primary" onClick={this.checkPassword}>Enter</button>
+              <button name="enter-game" disabled={!this.state.rolePassword} className="btn btn-action btn-action--primary" onClick={this.checkPassword}>Enter</button>
             </div>
           }
         </div>

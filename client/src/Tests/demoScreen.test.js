@@ -337,11 +337,12 @@ describe('Demo umpire screen interface', () => {
     };
     const selectors = {
       play: `${anchors.tab} button[name=play]`,
-      enter: `${anchors.tab} button[name="enter-wargame"]`,
+      enter: `${anchors.tab} button[name="enter-game"]`,
+      initiate: `${anchors.tab} button[name="initiate-game"]`,
       selectWargameToggle: `${anchors.wargameSelection} .react-select__input`,
       selectWargameMenu: `${anchors.wargameSelection} .react-select__menu`,
       selectWargameOptions: `${anchors.wargameSelection} .react-select__option`,
-      forcePassword: `${anchors.tab} [data-qa-force-name="White"] .btn`,
+      passwordButtons: `${anchors.tab} [data-qa-force-name="White"] .btn`,
     };
     await delays.preTest();
     await page.waitForSelector(anchors.tab);
@@ -360,7 +361,40 @@ describe('Demo umpire screen interface', () => {
         return option.innerText.match(label);
       }).click();
     }, {selectors, wargameTitle: wargameAttrs.title});
-    await page.waitForSelector(selectors.forcePassword);
-    await page.click(selectors.forcePassword);
+    await page.waitForSelector(selectors.passwordButtons);
+    await page.evaluate(selectors => {
+      [...document.querySelectorAll(selectors.passwordButtons)].find(btn => {
+        return btn.innerText === 'Game Control';
+      }).click();
+    }, selectors);
+    await page.waitForSelector(selectors.enter);
+    await page.click(selectors.enter);
+    await page.waitForSelector(selectors.initiate);
+    await page.click(selectors.initiate);
+  }, 15000);
+
+  test('Complete wargame tour', async () => {
+    let tour;
+    const anchors = {
+      tab: '#demo-player-1',
+      tour: '#___reactour',
+    };
+    const selectors = {
+      pages: `${anchors.tour} [data-tour-elem="dot"]`,
+      close: `${anchors.tour} [data-qa-type="close-tour"]`
+    };
+    await delays.preTest();
+    await page.waitForSelector(anchors.tour);
+    await page.waitForSelector(selectors.pages);
+    await page.evaluate(selectors => {
+      const pages = [...document.querySelectorAll(selectors.pages)];
+      for(let i = 1; i < pages.length; i++) {
+        pages[i].click();
+      }
+    }, selectors);
+    await page.waitForSelector(selectors.close);
+    await page.click(selectors.close);
+    tour = await page.$(anchors.tour);
+    expect(tour).toBeNull();
   }, 15000);
 });
