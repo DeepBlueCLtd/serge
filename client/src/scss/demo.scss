@@ -1,3 +1,5 @@
+@import 'dependencies/variables';
+
 .demo-content-wrapper {
   #umpire {
     width: 48vw;
@@ -116,6 +118,10 @@
       width: 75%;
       padding-left: 22vw;
       align-self: flex-start;
+    }
+
+    .react-select {
+      color: $baseColor;
     }
 
     .demo-passwords {

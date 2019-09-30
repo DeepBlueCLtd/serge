@@ -622,10 +622,8 @@
   padding: 16px;
   transform: translate3d(0, -50%, 0);
 
-  li {
-    cursor: pointer;
-    color: $linkColor;
-    text-decoration: underline;
+  li + li{
+    margin-top: 10px;
   }
 }
 

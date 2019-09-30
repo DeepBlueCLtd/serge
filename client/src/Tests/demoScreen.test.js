@@ -5,6 +5,9 @@ let browser;
 let page;
 let networks = {};
 let delays = {};
+let wargameAttrs = {
+  title: `Demo end to end ${Date.now()}`,
+};
 const umpireForce = {
   name: 'White',
   role: 'Game Control',
@@ -99,9 +102,8 @@ describe('Demo screen admin interface', () => {
   }, 15000);
 
   test('Modify wargame title', async () => {
-    let wargameTitle;
+    let title;
     const anchor = '#game-setup-head';
-    const title = `Demo end to end ${Date.now()}`;
     const selectors = {
       wargameTitle: `${anchor} #title-editable`,
       saveWargame: `${anchor} .savewargame-icon`,
@@ -110,14 +112,14 @@ describe('Demo screen admin interface', () => {
     await page.waitForSelector(anchor);
     await page.waitForSelector(selectors.wargameTitle);
     await page.click(selectors.wargameTitle, {clickCount: 3});
-    await page.type(selectors.wargameTitle, title);
+    await page.type(selectors.wargameTitle, wargameAttrs.title);
     await page.waitForSelector(selectors.saveWargame);
     await page.click(selectors.saveWargame);
     await networks.updateWargame();
     await networks.fetchWargame();
 
-    wargameTitle = await page.$eval(selectors.wargameTitle, el => el.value);
-    expect(wargameTitle).toBe(title);
+    title = await page.$eval(selectors.wargameTitle, el => el.value);
+    expect(title).toBe(wargameAttrs.title);
   }, 15000);
 
   test('Modify wargame overview description', async () => {
@@ -325,4 +327,40 @@ describe('Demo screen admin interface', () => {
       }
     })();
   }, 25000);
+});
+
+describe('Demo umpire screen interface', () => {
+  test('Initiate wargame', async () => {
+    const anchors = {
+      tab: '#demo-player-1',
+      wargameSelection: '#custom-select-wargame-selection',
+    };
+    const selectors = {
+      play: `${anchors.tab} button[name=play]`,
+      enter: `${anchors.tab} button[name="enter-wargame"]`,
+      selectWargameToggle: `${anchors.wargameSelection} .react-select__input`,
+      selectWargameMenu: `${anchors.wargameSelection} .react-select__menu`,
+      selectWargameOptions: `${anchors.wargameSelection} .react-select__option`,
+      forcePassword: `${anchors.tab} [data-qa-force-name="White"] .btn`,
+    };
+    await delays.preTest();
+    await page.waitForSelector(anchors.tab);
+    await page.waitForSelector(selectors.play);
+    await page.click(selectors.play);
+    await page.waitForSelector(selectors.selectWargameToggle);
+    await page.click(selectors.selectWargameToggle);
+    await page.waitForSelector(selectors.selectWargameMenu);
+    await page.waitForSelector(selectors.selectWargameOptions);
+    await page.waitForFunction(selectors => {
+      return document.querySelectorAll(selectors.selectWargameOptions).length > 0;
+    }, {}, selectors);
+    await page.evaluate(({selectors, wargameTitle}) => {
+      [...document.querySelectorAll(selectors.selectWargameOptions)].find(option => {
+        const label = new RegExp(`${wargameTitle}`, 'gi');
+        return option.innerText.match(label);
+      }).click();
+    }, {selectors, wargameTitle: wargameAttrs.title});
+    await page.waitForSelector(selectors.forcePassword);
+    await page.click(selectors.forcePassword);
+  }, 15000);
 });
