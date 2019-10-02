@@ -45,7 +45,7 @@ class MessagesListChatChannel extends Component {
                       null :
                       <span className="message-bullet" style={{ backgroundColor: details.from.forceColor }}>&nbsp;</span>
                   }
-                  <div className={classNames({"bold": !item.hasBeenRead})}>
+                  <div className={classNames("message-item-content", {"bold": !item.hasBeenRead})}>
                     {message.content}
                   </div>
                   <div className="info-wrap">

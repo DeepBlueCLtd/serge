@@ -408,10 +408,16 @@ describe('Demo umpire screen interface', () => {
       tab: '#demo-player-1',
       outGameFeed: '.out-of-game-feed',
       popupMenu: '.flexlayout__popup_menu_container',
+      get getAdmin() {
+        return `${this.outGameFeed} .contain-game-admin`;
+      }
     };
     const selectors = {
       buttonTabOverflow: `${anchors.outGameFeed} .flexlayout__tab_button_overflow`,
       buttonTabItems: `${anchors.outGameFeed} .flexlayout__tab_button_content`,
+      messageInput: `${anchors.outGameFeed} .new-message-creator [name="root[content]"]`,
+      ownMessages: `${anchors.getAdmin} .own-message:first-of-type`,
+      buttonSendMessage: `${anchors.getAdmin} .new-message-creator [name="send"]`,
       buttonTabPopupItems: `${anchors.popupMenu} .flexlayout__popup_menu_item`,
     };
 
@@ -439,5 +445,17 @@ describe('Demo umpire screen interface', () => {
         }, selectors);
       }
     })();
+    await page.waitForSelector(selectors.messageInput);
+    await page.type(selectors.messageInput, 'Hello from White');
+    await page.waitForFunction(({selectors}) => {
+      return document.querySelector(selectors.messageInput).value === 'Hello from White';
+    }, {}, {selectors});
+    await page.waitForSelector(selectors.buttonSendMessage);
+    await page.click(selectors.buttonSendMessage);
+    await page.waitForSelector(selectors.ownMessages);
+    await page.waitForFunction(selectors => {
+      const messages = document.querySelector(selectors.ownMessages);
+      return messages.querySelector('.message-item-content').innerText === 'Hello from White';
+    }, {}, selectors);
   }, 15000);
 });

@@ -68,7 +68,7 @@ class JsonCreator extends Component {
   render() {
     return (
       <div className="media">
-        <div className="media-body" id="message-creator" ref={this.editorPreviewRef}></div>
+        <div className="media-body message-creator" ref={this.editorPreviewRef}></div>
         <div className="align-self-center">
           <button name="send" className="btn btn-action btn-action--complimentary" onClick={this.sendMessage}>
             <span className="sr-only">Send</span>
