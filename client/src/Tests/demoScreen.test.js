@@ -13,10 +13,10 @@ const umpireForce = {
   role: 'Game Control',
 };
 const customForces = [{
-  name: 'Red Force',
+  name: 'Red',
   role: 'CO',
 }, {
-  name: 'Blue Force',
+  name: 'Blue',
   role: 'CO',
 }];
 const allForces = [
@@ -24,7 +24,7 @@ const allForces = [
   ...customForces,
 ];
 const allChannels = [{
-  name: 'Communication',
+  name: 'All chat',
   template: 'Chat',
 }, {
   name: 'Daily intentions',
@@ -56,6 +56,7 @@ beforeAll(async () => {
     });
   };
   delays.preTest = async () => await page.waitFor(2500);
+  delays.pause = async () => await page.waitFor(1500);
 });
 
 describe('Demo screen admin interface', () => {
@@ -94,7 +95,7 @@ describe('Demo screen admin interface', () => {
     await page.waitForSelector(selectors.createWargame);
     await page.evaluate(selectors => {
       [...document.querySelectorAll(selectors.createWargame)].find(btn => {
-        return btn.innerText.match(/create/gi);
+        return btn.innerText.match(/Create/gi);
       }).click();
     }, selectors);
     await networks.updateWargame();
@@ -386,15 +387,57 @@ describe('Demo umpire screen interface', () => {
     await delays.preTest();
     await page.waitForSelector(anchors.tour);
     await page.waitForSelector(selectors.pages);
-    await page.evaluate(selectors => {
-      const pages = [...document.querySelectorAll(selectors.pages)];
-      for(let i = 1; i < pages.length; i++) {
-        pages[i].click();
+    const pages = await page.$$(selectors.pages);
+    await (async () => {
+      for(let i = 1; i < [...pages].length; i++) {
+        await delays.pause();
+        await page.evaluate(el => el.click(), pages[i]);
+        await page.waitForFunction(el => {
+          return [...el.classList].indexOf('reactour__dot--is-active') !== -1;
+        }, {}, pages[i]);
       }
-    }, selectors);
+    })();
     await page.waitForSelector(selectors.close);
     await page.click(selectors.close);
     tour = await page.$(anchors.tour);
     expect(tour).toBeNull();
+  }, 15000);
+
+  test('Send game admin message', async () => {
+    const anchors = {
+      tab: '#demo-player-1',
+      outGameFeed: '.out-of-game-feed',
+      popupMenu: '.flexlayout__popup_menu_container',
+    };
+    const selectors = {
+      buttonTabOverflow: `${anchors.outGameFeed} .flexlayout__tab_button_overflow`,
+      buttonTabItems: `${anchors.outGameFeed} .flexlayout__tab_button_content`,
+      buttonTabPopupItems: `${anchors.popupMenu} .flexlayout__popup_menu_item`,
+    };
+
+    await delays.preTest();
+    await page.waitForSelector(anchors.outGameFeed);
+    await (async () => {
+      await page.evaluate(selectors => {
+        console.log(document.querySelector(selectors.buttonTabOverflow));
+      }, selectors);
+      if( await page.$(selectors.buttonTabOverflow) !== null ) {
+        await page.click(selectors.buttonTabOverflow);
+        await page.waitForSelector(selectors.buttonTabPopupItems);
+        await page.evaluate(selectors => {
+          console.log(document.querySelectorAll(selectors.buttonTabPopupItems));
+          [...document.querySelectorAll(selectors.buttonTabPopupItems)].find(btn => {
+            return btn.innerText.match(/Game Admin/gi);
+          }).click();
+        }, selectors);
+      } else {
+        await page.waitForSelector(selectors.buttonTabItems);
+        await page.evaluate(selectors => {
+          [...document.querySelectorAll(selectors.buttonTabItems)].find(btn => {
+            return btn.innerText.match(/Game Admin/gi);
+          }).click();
+        }, selectors);
+      }
+    })();
   }, 15000);
 });
