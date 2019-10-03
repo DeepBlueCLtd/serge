@@ -30,8 +30,8 @@ class GameChannels extends Component {
 
     return (
       <div className="flex-content flex-content--row-wrap">
-        <div className="message-feed" data-tour="fourth-step">
-          <ChannelTabsContainer />
+        <div className="message-feed in-game-feed" data-tour="fourth-step">
+          <ChannelTabsContainer ref={el => window.channelTabsContainer[force.uniqid] = el} />
         </div>
         <div className={classNames({"message-feed": true, "out-of-game-feed": true, "umpire-feed": state.controlUi})} data-tour="fifth-step">
           <TurnProgression />

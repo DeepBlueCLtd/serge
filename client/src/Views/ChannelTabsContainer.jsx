@@ -122,6 +122,10 @@ class ChannelTabsContainer extends Component {
     expiredStorage.setItem(this.state.modelName, JSON.stringify(this.model.toJson()), LOCAL_STORAGE_TIMEOUT);
   };
 
+  setActiveTab = (id) => {
+    this.model.doAction(FlexLayout.Actions.selectTab(id));
+  };
+
   tabRender = (node) => {
     const [ state ] = this.context;
     if (_.isEmpty(state.channels)) return;
@@ -161,15 +165,18 @@ class ChannelTabsContainer extends Component {
   };
 
   render() {
+    const [ state ] = this.context;
+    let force = state.allForces.find((force) => force.uniqid === state.selectedForce);
+
     return (
-      <>
+      <div className="contain-channel-tabs" data-force={force.uniqid}>
         <FlexLayout.Layout
           model={this.model}
           factory={this.factory}
           onRenderTab={this.tabRender}
           onModelChange={this.modelChanged}
         />
-      </>
+      </div>
     );
   }
 }

@@ -14,12 +14,18 @@ import "../scss/App.scss";
 class Channel extends Component {
   static contextType = PlayerStateContext;
 
+  constructor() {
+    super();
+    this.state = {};
+  }
+
   componentDidMount() {
     const [ state, dispatch ] = this.context;
-
+    const channelClassName = state.channels[this.props.channel].name.toLowerCase().replace(/ /g, '-');
     if (state.channels[this.props.channel].messages.length === 0) {
       getAllWargameMessages(state.currentWargame)(dispatch);
     }
+    this.state.channelTabClass = `tab-content-${channelClassName}`;
   }
 
   markAllRead = () => {
@@ -38,16 +44,11 @@ class Channel extends Component {
   };
 
   render() {
-
-    // use this next lines of JSX, near "mark as read", to allow bulk insertion
-    // <button name="Send 10 messages" className="btn btn-action btn-action--secondary" onClick={this.sendMultiple}>Send Multiple</button>
-    // <span className="btn-helper">{this.props.playerUi.channels[curChannel].messages.length}</span>
-
     let curChannel = this.props.channel;
     const [ state ] = this.context;
 
     return (
-      <>
+      <div className={this.state.channelTabClass} data-channel-id={curChannel}>
         <div className="forces-in-channel">
           {state.channels[curChannel].forceIcons.map((url, i) => <img key={`indicator${i}`} className="force-indicator role-icon" src={url} alt="" />)}
           <button name="mark as read" className="btn btn-action btn-action--secondary" onClick={this.markAllRead}>Mark all read</button>
@@ -80,7 +81,7 @@ class Channel extends Component {
             templates={state.channels[curChannel].templates}
           />
         }
-      </>
+      </div>
     );
   }
 }

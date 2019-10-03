@@ -44,6 +44,10 @@ class PlayerUi extends Component {
     this.props.dispatch(getSergeGameInformation());
   };
 
+  componentDidMount() {
+    window.channelTabsContainer = window.channelTabsContainer || {};
+  }
+
   componentDidUpdate() {
     const [ state ] = this.context;
     if(state.selectedForce && state.selectedRole) {

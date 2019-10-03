@@ -55,6 +55,12 @@ beforeAll(async () => {
       return request.url().endsWith('_all_docs?descending=true&include_docs=true') && request.method() === 'GET' && response.status() === 200
     });
   };
+  networks.getChanges = async () => {
+    await page.waitForResponse(response => {
+      const request = response.request();
+      return request.url().endsWith('_changes?include_docs=true&feed=longpoll&since=3&limit=25') && request.method() === 'GET' && response.status() === 200
+    });
+  };
   delays.preTest = async () => await page.waitFor(2500);
   delays.pause = async () => await page.waitFor(1500);
 });
@@ -404,6 +410,7 @@ describe('Demo umpire screen interface', () => {
   }, 15000);
 
   test('Send game admin message', async () => {
+    let ownMessage;
     const anchors = {
       tab: '#demo-player-1',
       outGameFeed: '.out-of-game-feed',
@@ -416,22 +423,18 @@ describe('Demo umpire screen interface', () => {
       buttonTabOverflow: `${anchors.outGameFeed} .flexlayout__tab_button_overflow`,
       buttonTabItems: `${anchors.outGameFeed} .flexlayout__tab_button_content`,
       messageInput: `${anchors.outGameFeed} .new-message-creator [name="root[content]"]`,
-      ownMessages: `${anchors.getAdmin} .own-message:first-of-type`,
+      ownMessage: `${anchors.getAdmin} .own-message:first-of-type .message-item-content`,
       buttonSendMessage: `${anchors.getAdmin} .new-message-creator [name="send"]`,
       buttonTabPopupItems: `${anchors.popupMenu} .flexlayout__popup_menu_item`,
     };
-
+    const content = 'Hello from White';
     await delays.preTest();
     await page.waitForSelector(anchors.outGameFeed);
     await (async () => {
-      await page.evaluate(selectors => {
-        console.log(document.querySelector(selectors.buttonTabOverflow));
-      }, selectors);
       if( await page.$(selectors.buttonTabOverflow) !== null ) {
         await page.click(selectors.buttonTabOverflow);
         await page.waitForSelector(selectors.buttonTabPopupItems);
         await page.evaluate(selectors => {
-          console.log(document.querySelectorAll(selectors.buttonTabPopupItems));
           [...document.querySelectorAll(selectors.buttonTabPopupItems)].find(btn => {
             return btn.innerText.match(/Game Admin/gi);
           }).click();
@@ -446,16 +449,76 @@ describe('Demo umpire screen interface', () => {
       }
     })();
     await page.waitForSelector(selectors.messageInput);
-    await page.type(selectors.messageInput, 'Hello from White');
-    await page.waitForFunction(({selectors}) => {
-      return document.querySelector(selectors.messageInput).value === 'Hello from White';
-    }, {}, {selectors});
+    await page.type(selectors.messageInput, content);
+    await page.waitForFunction(({selectors, content}) => {
+      return document.querySelector(selectors.messageInput).value === content;
+    }, {}, {selectors, content});
     await page.waitForSelector(selectors.buttonSendMessage);
     await page.click(selectors.buttonSendMessage);
-    await page.waitForSelector(selectors.ownMessages);
-    await page.waitForFunction(selectors => {
-      const messages = document.querySelector(selectors.ownMessages);
-      return messages.querySelector('.message-item-content').innerText === 'Hello from White';
-    }, {}, selectors);
+    await page.waitForSelector(selectors.ownMessage);
+    await page.waitForFunction(({selectors, content}) => {
+      const message = document.querySelector(selectors.ownMessage);
+      return message.innerText === content;
+    }, {}, {selectors, content});
+    ownMessage = await page.$eval(selectors.ownMessage, el => el.innerText);
+    expect(ownMessage).toEqual(content);
+  }, 15000);
+
+  test('Send message on All chat channels', async () => {
+    const anchors = {
+      tab: '#demo-player-1',
+      get inGameFeed() {
+        return `${this.tab} .in-game-feed`;
+      },
+      get channelAllChat() {
+        return `${this.inGameFeed} .tab-content-all-chat`;
+      },
+    };
+    const selectors = {
+      channelContainer: `${anchors.inGameFeed} .contain-channel-tabs`,
+      activeButtonTab: `${anchors.inGameFeed} .flexlayout__tab_button--selected .flexlayout__tab_button_content`,
+      collapsibleTrigger: `${anchors.channelAllChat} .Collapsible__trigger`,
+      collapsibleInner: `${anchors.channelAllChat} .Collapsible__contentInner`,
+      messageInput: `${anchors.channelAllChat} .Collapsible__contentInner [name="root[content]"]`,
+      privateMessageInput: `${anchors.channelAllChat} #private-message-input`,
+      sendMessage: `${anchors.channelAllChat} .Collapsible__contentInner [name="send"]`,
+    };
+    const dummy = {
+      content: 'Message example from White',
+      privateContent: 'Private message example from White',
+    };
+    await delays.preTest();
+    await page.waitForSelector(selectors.channelContainer);
+    const forceId = await page.$eval(selectors.channelContainer, el => el.dataset.force);
+    const channelId = await page.$eval(anchors.channelAllChat, el => el.dataset.channelId);
+    await page.evaluate(async ({selectors, forceId, channelId}) => {
+      const component = window.channelTabsContainer[forceId];
+      if( component ) {
+        await (() => {
+          component.setActiveTab(channelId);
+        })();
+      }
+    }, {selectors, forceId, channelId});
+    await page.waitForSelector(selectors.activeButtonTab);
+    // await page.waitForFunction(selectors => {
+    //   return document.querySelector(selectors.activeButtonTab).innerText.match(/All chat/gi);
+    // }, {}, selectors);
+    // await page.waitForSelector(anchors.channelAllChat, { visible: true });
+    // await page.waitForSelector(selectors.collapsibleTrigger, { visible: true });
+    // await page.click(selectors.collapsibleTrigger);
+    // await page.waitForSelector(selectors.collapsibleInner, { visible: true });
+    // await page.waitForSelector(selectors.messageInput);
+    // await page.type(selectors.messageInput, dummy.content);
+    // await page.waitForFunction(({selectors, content}) => {
+    //   return document.querySelector(selectors.messageInput).value === content;
+    // }, {}, {selectors, content: dummy.content});
+    // await page.waitForSelector(selectors.privateMessageInput);
+    // await page.type(selectors.privateMessageInput, dummy.privateContent);
+    // await page.waitForFunction(({selectors, content}) => {
+    //   return document.querySelector(selectors.privateMessageInput).value === content;
+    // }, {}, {selectors, content: dummy.privateContent});
+    // await page.waitForSelector(selectors.sendMessage);
+    // await page.click(selectors.sendMessage);
+    // await networks.getChanges();
   }, 15000);
 });
