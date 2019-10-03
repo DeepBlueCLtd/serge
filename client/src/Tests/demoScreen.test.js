@@ -465,6 +465,7 @@ describe('Demo umpire screen interface', () => {
   }, 15000);
 
   test('Send message on All chat channels', async () => {
+    let latestMessage;
     const anchors = {
       tab: '#demo-player-1',
       get inGameFeed() {
@@ -477,11 +478,12 @@ describe('Demo umpire screen interface', () => {
     const selectors = {
       channelContainer: `${anchors.inGameFeed} .contain-channel-tabs`,
       activeButtonTab: `${anchors.inGameFeed} .flexlayout__tab_button--selected .flexlayout__tab_button_content`,
-      collapsibleTrigger: `${anchors.channelAllChat} .Collapsible__trigger`,
-      collapsibleInner: `${anchors.channelAllChat} .Collapsible__contentInner`,
+      messageCreatorTrigger: `${anchors.channelAllChat} .new-message-creator .Collapsible__trigger`,
+      messageCreatorInner: `${anchors.channelAllChat} .new-message-creator .Collapsible__contentInner`,
       messageInput: `${anchors.channelAllChat} .Collapsible__contentInner [name="root[content]"]`,
       privateMessageInput: `${anchors.channelAllChat} #private-message-input`,
       sendMessage: `${anchors.channelAllChat} .Collapsible__contentInner [name="send"]`,
+      latestMessage: `${anchors.channelAllChat} .message-item-unread:first-of-type .message-title`,
     };
     const dummy = {
       content: 'Message example from White',
@@ -500,25 +502,29 @@ describe('Demo umpire screen interface', () => {
       }
     }, {selectors, forceId, channelId});
     await page.waitForSelector(selectors.activeButtonTab);
-    // await page.waitForFunction(selectors => {
-    //   return document.querySelector(selectors.activeButtonTab).innerText.match(/All chat/gi);
-    // }, {}, selectors);
-    // await page.waitForSelector(anchors.channelAllChat, { visible: true });
-    // await page.waitForSelector(selectors.collapsibleTrigger, { visible: true });
-    // await page.click(selectors.collapsibleTrigger);
-    // await page.waitForSelector(selectors.collapsibleInner, { visible: true });
-    // await page.waitForSelector(selectors.messageInput);
-    // await page.type(selectors.messageInput, dummy.content);
-    // await page.waitForFunction(({selectors, content}) => {
-    //   return document.querySelector(selectors.messageInput).value === content;
-    // }, {}, {selectors, content: dummy.content});
-    // await page.waitForSelector(selectors.privateMessageInput);
-    // await page.type(selectors.privateMessageInput, dummy.privateContent);
-    // await page.waitForFunction(({selectors, content}) => {
-    //   return document.querySelector(selectors.privateMessageInput).value === content;
-    // }, {}, {selectors, content: dummy.privateContent});
-    // await page.waitForSelector(selectors.sendMessage);
-    // await page.click(selectors.sendMessage);
-    // await networks.getChanges();
+    await page.waitForFunction(selectors => {
+      return document.querySelector(selectors.activeButtonTab).innerText.match(/All chat/gi);
+    }, {}, selectors);
+    await page.waitForSelector(anchors.channelAllChat, { visible: true });
+    await page.waitForSelector(selectors.messageCreatorTrigger, { visible: true });
+    await page.click(selectors.messageCreatorTrigger);
+    await page.waitForSelector(selectors.messageCreatorInner, { visible: true });
+    await page.waitForSelector(selectors.messageInput);
+    await page.type(selectors.messageInput, dummy.content);
+    await page.waitForFunction(({selectors, content}) => {
+      return document.querySelector(selectors.messageInput).value === content;
+    }, {}, {selectors, content: dummy.content});
+    await page.waitForSelector(selectors.privateMessageInput);
+    await page.type(selectors.privateMessageInput, dummy.privateContent);
+    await page.waitForFunction(({selectors, content}) => {
+      return document.querySelector(selectors.privateMessageInput).value === content;
+    }, {}, {selectors, content: dummy.privateContent});
+    await page.waitForSelector(selectors.sendMessage);
+    await page.click(selectors.sendMessage);
+    await networks.getChanges();
+    await page.click(selectors.messageCreatorTrigger);
+    await page.waitForSelector(selectors.latestMessage);
+    latestMessage = await page.$eval(selectors.latestMessage, el => el.innerText);
+    expect(latestMessage).toEqual(dummy.content);
   }, 15000);
 });
