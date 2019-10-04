@@ -61,6 +61,13 @@ beforeAll(async () => {
       return request.url().endsWith('_changes?include_docs=true&feed=longpoll&since=3&limit=25') && request.method() === 'GET' && response.status() === 200
     });
   };
+  networks.postNewMessage = async () => {
+    await page.waitForResponse(response => {
+      const request = response.request();
+      const pathRegex = /wargame-(.*)\/[\d]{4}-[\d]{2}-[\d]{2}T[\d]{2}%3A[\d]{2}%3A[\d]{2}\.[\d]+Z$/gi;
+      return request.url().match(pathRegex) && request.method() === 'PUT' && response.status() === 201;
+    });
+  };
   delays.preTest = async () => await page.waitFor(2500);
   delays.pause = async () => await page.waitFor(1500);
 });
@@ -378,6 +385,7 @@ describe('Demo umpire screen interface', () => {
     await page.click(selectors.enter);
     await page.waitForSelector(selectors.initiate);
     await page.click(selectors.initiate);
+    await networks.updateWargame();
   }, 15000);
 
   test('Complete wargame tour', async () => {
@@ -413,8 +421,10 @@ describe('Demo umpire screen interface', () => {
     let ownMessage;
     const anchors = {
       tab: '#demo-player-1',
-      outGameFeed: '.out-of-game-feed',
       popupMenu: '.flexlayout__popup_menu_container',
+      get outGameFeed() {
+        return `${this.tab} .out-of-game-feed`;
+      },
       get getAdmin() {
         return `${this.outGameFeed} .contain-game-admin`;
       }
@@ -455,6 +465,7 @@ describe('Demo umpire screen interface', () => {
     }, {}, {selectors, content});
     await page.waitForSelector(selectors.buttonSendMessage);
     await page.click(selectors.buttonSendMessage);
+    await networks.postNewMessage();
     await page.waitForSelector(selectors.ownMessage);
     await page.waitForFunction(({selectors, content}) => {
       const message = document.querySelector(selectors.ownMessage);
@@ -521,7 +532,159 @@ describe('Demo umpire screen interface', () => {
     }, {}, {selectors, content: dummy.privateContent});
     await page.waitForSelector(selectors.sendMessage);
     await page.click(selectors.sendMessage);
-    await networks.getChanges();
+    await networks.postNewMessage();
+    await page.click(selectors.messageCreatorTrigger);
+    await page.waitForSelector(selectors.latestMessage);
+    latestMessage = await page.$eval(selectors.latestMessage, el => el.innerText);
+    expect(latestMessage).toEqual(dummy.content);
+  }, 15000);
+});
+
+describe('Demo red force screen interface', () => {
+  test('Enter wargame', async () => {
+    const anchors = {
+      tab: '#demo-player-2',
+      wargameSelection: '#custom-select-wargame-selection',
+    };
+    const selectors = {
+      play: `${anchors.tab} button[name=play]`,
+      enter: `${anchors.tab} button[name="enter-game"]`,
+      selectWargameToggle: `${anchors.wargameSelection} .react-select__input`,
+      selectWargameMenu: `${anchors.wargameSelection} .react-select__menu`,
+      selectWargameOptions: `${anchors.wargameSelection} .react-select__option`,
+      passwordButtons: `${anchors.tab} [data-qa-force-name="Red"] .btn`,
+    };
+    await delays.preTest();
+    await page.waitForSelector(anchors.tab);
+    await page.waitForSelector(selectors.play);
+    await page.click(selectors.play);
+    await page.waitForSelector(selectors.selectWargameToggle);
+    await page.click(selectors.selectWargameToggle);
+    await page.waitForSelector(selectors.selectWargameMenu);
+    await page.waitForSelector(selectors.selectWargameOptions);
+    await page.waitForFunction(selectors => {
+      return document.querySelectorAll(selectors.selectWargameOptions).length > 0;
+    }, {}, selectors);
+    await page.evaluate(({selectors, wargameTitle}) => {
+      [...document.querySelectorAll(selectors.selectWargameOptions)].find(option => {
+        const label = new RegExp(`${wargameTitle}`, 'gi');
+        return option.innerText.match(label);
+      }).click();
+    }, {selectors, wargameTitle: wargameAttrs.title});
+    await page.waitForSelector(selectors.passwordButtons);
+    await page.evaluate(selectors => {
+      [...document.querySelectorAll(selectors.passwordButtons)].find(btn => {
+        return btn.innerText === 'CO';
+      }).click();
+    }, selectors);
+    await page.waitForSelector(selectors.enter);
+    await page.click(selectors.enter);
+  }, 15000);
+
+  test('Skip wargame tour', async () => {
+    let tour;
+    const anchors = {
+      tab: '#demo-player-2',
+      tour: '#___reactour',
+    };
+    const selectors = {
+      close: `${anchors.tour} [data-tour-elem="controls"] + button`
+    };
+    await delays.preTest();
+    await page.waitForSelector(anchors.tour);
+    await page.waitForSelector(selectors.close);
+    await page.click(selectors.close);
+    tour = await page.$(anchors.tour);
+    expect(tour).toBeNull();
+  }, 15000);
+
+  test('Send game admin message', async () => {
+    let ownMessage;
+    const anchors = {
+      tab: '#demo-player-2',
+      get outGameFeed() {
+        return `${this.tab} .out-of-game-feed`;
+      },
+      get getAdmin() {
+        return `${this.outGameFeed} .contain-game-admin`;
+      }
+    };
+    const selectors = {
+      messageInput: `${anchors.outGameFeed} .new-message-creator [name="root[content]"]`,
+      ownMessage: `${anchors.getAdmin} .own-message:first-of-type .message-item-content`,
+      buttonSendMessage: `${anchors.getAdmin} .new-message-creator [name="send"]`,
+    };
+    const content = 'Hello from Red';
+    await delays.preTest();
+    await page.waitForSelector(anchors.outGameFeed);
+    await page.waitForSelector(selectors.messageInput);
+    await page.type(selectors.messageInput, content);
+    await page.waitForFunction(({selectors, content}) => {
+      return document.querySelector(selectors.messageInput).value === content;
+    }, {}, {selectors, content});
+    await page.waitForSelector(selectors.buttonSendMessage);
+    await page.click(selectors.buttonSendMessage);
+    await networks.postNewMessage();
+    await page.waitForSelector(selectors.ownMessage);
+    await page.waitForFunction(({selectors, content}) => {
+      const message = document.querySelector(selectors.ownMessage);
+      return message.innerText === content;
+    }, {}, {selectors, content});
+    ownMessage = await page.$eval(selectors.ownMessage, el => el.innerText);
+    expect(ownMessage).toEqual(content);
+  }, 15000);
+
+  test('Send message on All chat channels', async () => {
+    let latestMessage;
+    const anchors = {
+      tab: '#demo-player-2',
+      get inGameFeed() {
+        return `${this.tab} .in-game-feed`;
+      },
+      get channelAllChat() {
+        return `${this.inGameFeed} .tab-content-all-chat`;
+      },
+    };
+    const selectors = {
+      channelContainer: `${anchors.inGameFeed} .contain-channel-tabs`,
+      activeButtonTab: `${anchors.inGameFeed} .flexlayout__tab_button--selected .flexlayout__tab_button_content`,
+      messageCreatorTrigger: `${anchors.channelAllChat} .new-message-creator .Collapsible__trigger`,
+      messageCreatorInner: `${anchors.channelAllChat} .new-message-creator .Collapsible__contentInner`,
+      messageInput: `${anchors.channelAllChat} .Collapsible__contentInner [name="root[content]"]`,
+      sendMessage: `${anchors.channelAllChat} .Collapsible__contentInner [name="send"]`,
+      latestMessage: `${anchors.channelAllChat} .message-item-unread:first-of-type .message-title`,
+    };
+    const dummy = {
+      content: 'Message example from Red',
+    };
+    await delays.preTest();
+    await page.waitForSelector(selectors.channelContainer);
+    const forceId = await page.$eval(selectors.channelContainer, el => el.dataset.force);
+    const channelId = await page.$eval(anchors.channelAllChat, el => el.dataset.channelId);
+    await page.evaluate(async ({selectors, forceId, channelId}) => {
+      const component = window.channelTabsContainer[forceId];
+      if( component ) {
+        await (() => {
+          component.setActiveTab(channelId);
+        })();
+      }
+    }, {selectors, forceId, channelId});
+    await page.waitForSelector(selectors.activeButtonTab);
+    await page.waitForFunction(selectors => {
+      return document.querySelector(selectors.activeButtonTab).innerText.match(/All chat/gi);
+    }, {}, selectors);
+    await page.waitForSelector(anchors.channelAllChat, { visible: true });
+    await page.waitForSelector(selectors.messageCreatorTrigger, { visible: true });
+    await page.click(selectors.messageCreatorTrigger);
+    await page.waitForSelector(selectors.messageCreatorInner, { visible: true });
+    await page.waitForSelector(selectors.messageInput);
+    await page.type(selectors.messageInput, dummy.content);
+    await page.waitForFunction(({selectors, content}) => {
+      return document.querySelector(selectors.messageInput).value === content;
+    }, {}, {selectors, content: dummy.content});
+    await page.waitForSelector(selectors.sendMessage);
+    await page.click(selectors.sendMessage);
+    await networks.postNewMessage();
     await page.click(selectors.messageCreatorTrigger);
     await page.waitForSelector(selectors.latestMessage);
     latestMessage = await page.$eval(selectors.latestMessage, el => el.innerText);
