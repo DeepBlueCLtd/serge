@@ -6,13 +6,14 @@ import {
   allChannels,
 } from "./demoScreen/config";
 import initSetup from "./demoScreen/setup";
+import ActionFactory from "./demoScreen/factory";
 
-let page;
-let networks;
-let delays;
+let page, networks, delays, factory;
+factory = new ActionFactory();
 
 beforeAll(async () => {
   ({page, networks, delays} = await initSetup());
+  await factory.init(page, networks, delays);
 });
 
 describe('Demo screen admin interface', () => {
@@ -49,11 +50,7 @@ describe('Demo screen admin interface', () => {
     };
     await delays.preTest();
     await page.waitForSelector(selectors.createWargame);
-    await page.evaluate(selectors => {
-      [...document.querySelectorAll(selectors.createWargame)].find(btn => {
-        return btn.innerText.match(/Create/gi);
-      }).click();
-    }, selectors);
+    await factory.filterClickElements(selectors.createWargame, 'Create');
     await networks.updateWargame();
     await networks.getAllWargames();
   }, 15000);
@@ -67,9 +64,7 @@ describe('Demo screen admin interface', () => {
     };
     await delays.preTest();
     await page.waitForSelector(anchor);
-    await page.waitForSelector(selectors.wargameTitle);
-    await page.click(selectors.wargameTitle, {clickCount: 3});
-    await page.type(selectors.wargameTitle, wargameAttrs.title);
+    await factory.overrideValue(selectors.wargameTitle, wargameAttrs.title);
     await page.waitForSelector(selectors.saveWargame);
     await page.click(selectors.saveWargame);
     await networks.updateWargame();
@@ -136,12 +131,8 @@ describe('Demo screen admin interface', () => {
         await page.click(selectors.addForce);
         await networks.updateWargame();
         await networks.fetchWargame();
-        await page.waitForSelector(selectors.forceName);
-        await page.click(selectors.forceName, {clickCount: 3});
-        await page.type(selectors.forceName, customForces[i].name);
-        await page.waitForFunction(({selectors, forceName}) => {
-          return document.querySelector(selectors.forceName).value === forceName;
-        }, {}, { selectors, forceName: customForces[i].name});
+        await factory.overrideValue(selectors.forceName, customForces[i].name);
+        await factory.valueMatched(selectors.forceName, customForces[i].name);
         await page.waitForSelector(selectors.saveForce);
         await page.click(selectors.saveForce);
         await networks.updateWargame();
@@ -172,12 +163,8 @@ describe('Demo screen admin interface', () => {
         await page.click(selectors.addChannel);
         await networks.updateWargame();
         await networks.fetchWargame();
-        await page.waitForSelector(selectors.channelName);
-        await page.click(selectors.channelName, {clickCount: 3});
-        await page.type(selectors.channelName, allChannels[i].name);
-        await page.waitForFunction(({selectors, channelName}) => {
-          return document.querySelector(selectors.channelName).value === channelName;
-        }, {}, {selectors, channelName: allChannels[i].name});
+        await factory.overrideValue(selectors.channelName, allChannels[i].name);
+        await factory.valueMatched(selectors.channelName, allChannels[i].name);
         await page.waitForSelector(selectors.saveChannel);
         await page.click(selectors.saveChannel);
         await networks.updateWargame();
@@ -190,7 +177,6 @@ describe('Demo screen admin interface', () => {
   }, 25000);
 
   test('Assign channel to force', async () => {
-    let channels;
     const anchors = {
       tab: '#game-setup-tab-channels',
       forceSelection: '#custom-select-force-selection',
@@ -218,57 +204,31 @@ describe('Demo screen admin interface', () => {
       for(let i = 0; i < allChannels.length; i++) {
         const channelName = allChannels[i].name;
         const channelTemplate = allChannels[i].template;
-        await page.evaluate(({selectors, channelName}) => {
-          [...document.querySelectorAll(selectors.listChannels)].find(list => {
-            const label = new RegExp(`${channelName}`, 'gi');
-            return list.innerText.match(label);
-          }).click();
-        }, {selectors, channelName});
+        await factory.filterClickElements(selectors.listChannels, channelName);
         await page.waitForSelector(selectors.channelName);
-        await page.waitForFunction(({selectors, channelName}) => {
-          return document.querySelector(selectors.channelName).value === channelName;
-        }, {}, {selectors, channelName});
+        await factory.valueMatched(selectors.channelName, channelName);
         await (async () => {
           for(let j = 0; j < allForces.length; j++) {
             const forceName = allForces[j].name;
             const forceRole = allForces[j].role;
-            await page.waitForSelector(selectors.channelForceToggle);
-            await page.click(selectors.channelForceToggle);
-            await page.waitForSelector(selectors.channelForceMenu);
-            await page.waitForSelector(selectors.channelForceOptions);
-            await page.waitForFunction(selectors => {
-              return document.querySelectorAll(selectors.channelForceOptions).length > 0;
-            }, {}, selectors);
-            await page.evaluate(({selectors, forceName}) => {
-              [...document.querySelectorAll(selectors.channelForceOptions)].find(option => {
-                return option.innerText === forceName;
-              }).click();
-            }, {selectors, forceName});
-            await page.waitForSelector(selectors.channelRoleToggle);
-            await page.click(selectors.channelRoleToggle);
-            await page.waitForSelector(selectors.channelRoleMenu);
-            await page.waitForSelector(selectors.channelRoleOptions);
-            await page.waitForFunction(selectors => {
-              return document.querySelectorAll(selectors.channelRoleOptions).length > 0;
-            }, {}, selectors);
-            await page.evaluate(({selectors, forceRole}) => {
-              [...document.querySelectorAll(selectors.channelRoleOptions)].find(option => {
-                return option.innerText === forceRole;
-              }).click();
-            }, {selectors, forceRole});
-            await page.waitForSelector(selectors.channelTemplateToggle);
-            await page.click(selectors.channelTemplateToggle);
-            await page.waitForSelector(selectors.channelTemplateMenu);
-            await page.waitForSelector(selectors.channelTemplateOptions);
-            await page.waitForFunction(selectors => {
-              return document.querySelectorAll(selectors.channelTemplateOptions).length > 0;
-            }, {}, selectors);
-            await page.evaluate(({selectors, channelTemplate}) => {
-              [...document.querySelectorAll(selectors.channelTemplateOptions)].find(option => {
-                const label = new RegExp(`${channelTemplate}`, 'gi');
-                return option.innerText.match(label);
-              }).click();
-            }, {selectors, channelTemplate});
+            await factory.chooseCustomSelect(
+              selectors.channelForceToggle,
+              selectors.channelForceMenu,
+              selectors.channelForceOptions,
+              forceName
+            );
+            await factory.chooseCustomSelect(
+              selectors.channelRoleToggle,
+              selectors.channelRoleMenu,
+              selectors.channelRoleOptions,
+              forceRole
+            );
+            await factory.chooseCustomSelect(
+              selectors.channelTemplateToggle,
+              selectors.channelTemplateMenu,
+              selectors.channelTemplateOptions,
+              channelTemplate
+            );
             await page.waitForSelector(selectors.addParticipant);
             await page.click(selectors.addParticipant);
             await page.waitForSelector(selectors.listParticipants);
@@ -303,29 +263,7 @@ describe('Demo umpire screen interface', () => {
     };
     await delays.preTest();
     await page.waitForSelector(anchors.tab);
-    await page.waitForSelector(selectors.play);
-    await page.click(selectors.play);
-    await page.waitForSelector(selectors.selectWargameToggle);
-    await page.click(selectors.selectWargameToggle);
-    await page.waitForSelector(selectors.selectWargameMenu);
-    await page.waitForSelector(selectors.selectWargameOptions);
-    await page.waitForFunction(selectors => {
-      return document.querySelectorAll(selectors.selectWargameOptions).length > 0;
-    }, {}, selectors);
-    await page.evaluate(({selectors, wargameTitle}) => {
-      [...document.querySelectorAll(selectors.selectWargameOptions)].find(option => {
-        const label = new RegExp(`${wargameTitle}`, 'gi');
-        return option.innerText.match(label);
-      }).click();
-    }, {selectors, wargameTitle: wargameAttrs.title});
-    await page.waitForSelector(selectors.passwordButtons);
-    await page.evaluate(selectors => {
-      [...document.querySelectorAll(selectors.passwordButtons)].find(btn => {
-        return btn.innerText === 'Game Control';
-      }).click();
-    }, selectors);
-    await page.waitForSelector(selectors.enter);
-    await page.click(selectors.enter);
+    await factory.enterGame(selectors, wargameAttrs.title, 'Game Control');
     await page.waitForSelector(selectors.initiate);
     await page.click(selectors.initiate);
     await networks.updateWargame();
@@ -387,33 +325,13 @@ describe('Demo umpire screen interface', () => {
       if( await page.$(selectors.buttonTabOverflow) !== null ) {
         await page.click(selectors.buttonTabOverflow);
         await page.waitForSelector(selectors.buttonTabPopupItems);
-        await page.evaluate(selectors => {
-          [...document.querySelectorAll(selectors.buttonTabPopupItems)].find(btn => {
-            return btn.innerText.match(/Game Admin/gi);
-          }).click();
-        }, selectors);
+        await factory.filterClickElements(selectors.buttonTabPopupItems, 'Game Admin');
       } else {
         await page.waitForSelector(selectors.buttonTabItems);
-        await page.evaluate(selectors => {
-          [...document.querySelectorAll(selectors.buttonTabItems)].find(btn => {
-            return btn.innerText.match(/Game Admin/gi);
-          }).click();
-        }, selectors);
+        await factory.filterClickElements(selectors.buttonTabItems, 'Game Admin');
       }
     })();
-    await page.waitForSelector(selectors.messageInput);
-    await page.type(selectors.messageInput, content);
-    await page.waitForFunction(({selectors, content}) => {
-      return document.querySelector(selectors.messageInput).value === content;
-    }, {}, {selectors, content});
-    await page.waitForSelector(selectors.buttonSendMessage);
-    await page.click(selectors.buttonSendMessage);
-    await networks.postNewMessage();
-    await page.waitForSelector(selectors.ownMessage);
-    await page.waitForFunction(({selectors, content}) => {
-      const message = document.querySelector(selectors.ownMessage);
-      return message.innerText === content;
-    }, {}, {selectors, content});
+    await factory.sendGameAdminMessage(selectors, content);
     ownMessage = await page.$eval(selectors.ownMessage, el => el.innerText);
     expect(ownMessage).toEqual(content);
   }, 15000);
@@ -444,39 +362,7 @@ describe('Demo umpire screen interface', () => {
       privateContent: 'Private message example from White',
     };
     await delays.preTest();
-    await page.waitForSelector(selectors.channelContainer);
-    const forceId = await page.$eval(selectors.channelContainer, el => el.dataset.force);
-    const channelId = await page.$eval(anchors.channelAllChat, el => el.dataset.channelId);
-    await page.evaluate(async ({selectors, forceId, channelId}) => {
-      const component = window.channelTabsContainer[forceId];
-      if( component ) {
-        await (() => {
-          component.setActiveTab(channelId);
-        })();
-      }
-    }, {selectors, forceId, channelId});
-    await page.waitForSelector(selectors.activeButtonTab);
-    await page.waitForFunction(selectors => {
-      return document.querySelector(selectors.activeButtonTab).innerText.match(/All chat/gi);
-    }, {}, selectors);
-    await page.waitForSelector(anchors.channelAllChat, { visible: true });
-    await page.waitForSelector(selectors.messageCreatorTrigger, { visible: true });
-    await page.click(selectors.messageCreatorTrigger);
-    await page.waitForSelector(selectors.messageCreatorInner, { visible: true });
-    await page.waitForSelector(selectors.messageInput);
-    await page.type(selectors.messageInput, dummy.content);
-    await page.waitForFunction(({selectors, content}) => {
-      return document.querySelector(selectors.messageInput).value === content;
-    }, {}, {selectors, content: dummy.content});
-    await page.waitForSelector(selectors.privateMessageInput);
-    await page.type(selectors.privateMessageInput, dummy.privateContent);
-    await page.waitForFunction(({selectors, content}) => {
-      return document.querySelector(selectors.privateMessageInput).value === content;
-    }, {}, {selectors, content: dummy.privateContent});
-    await page.waitForSelector(selectors.sendMessage);
-    await page.click(selectors.sendMessage);
-    await networks.postNewMessage();
-    await page.click(selectors.messageCreatorTrigger);
+    await factory.sendAllChatMessage(anchors, selectors, dummy, true);
     await page.waitForSelector(selectors.latestMessage);
     latestMessage = await page.$eval(selectors.latestMessage, el => el.innerText);
     expect(latestMessage).toEqual(dummy.content);
@@ -499,29 +385,7 @@ describe('Demo red force screen interface', () => {
     };
     await delays.preTest();
     await page.waitForSelector(anchors.tab);
-    await page.waitForSelector(selectors.play);
-    await page.click(selectors.play);
-    await page.waitForSelector(selectors.selectWargameToggle);
-    await page.click(selectors.selectWargameToggle);
-    await page.waitForSelector(selectors.selectWargameMenu);
-    await page.waitForSelector(selectors.selectWargameOptions);
-    await page.waitForFunction(selectors => {
-      return document.querySelectorAll(selectors.selectWargameOptions).length > 0;
-    }, {}, selectors);
-    await page.evaluate(({selectors, wargameTitle}) => {
-      [...document.querySelectorAll(selectors.selectWargameOptions)].find(option => {
-        const label = new RegExp(`${wargameTitle}`, 'gi');
-        return option.innerText.match(label);
-      }).click();
-    }, {selectors, wargameTitle: wargameAttrs.title});
-    await page.waitForSelector(selectors.passwordButtons);
-    await page.evaluate(selectors => {
-      [...document.querySelectorAll(selectors.passwordButtons)].find(btn => {
-        return btn.innerText === 'CO';
-      }).click();
-    }, selectors);
-    await page.waitForSelector(selectors.enter);
-    await page.click(selectors.enter);
+    await factory.enterGame(selectors, wargameAttrs.title, 'CO');
   }, 15000);
 
   test('Skip wargame tour', async () => {
@@ -560,19 +424,7 @@ describe('Demo red force screen interface', () => {
     const content = 'Hello from Red';
     await delays.preTest();
     await page.waitForSelector(anchors.outGameFeed);
-    await page.waitForSelector(selectors.messageInput);
-    await page.type(selectors.messageInput, content);
-    await page.waitForFunction(({selectors, content}) => {
-      return document.querySelector(selectors.messageInput).value === content;
-    }, {}, {selectors, content});
-    await page.waitForSelector(selectors.buttonSendMessage);
-    await page.click(selectors.buttonSendMessage);
-    await networks.postNewMessage();
-    await page.waitForSelector(selectors.ownMessage);
-    await page.waitForFunction(({selectors, content}) => {
-      const message = document.querySelector(selectors.ownMessage);
-      return message.innerText === content;
-    }, {}, {selectors, content});
+    await factory.sendGameAdminMessage(selectors, content);
     ownMessage = await page.$eval(selectors.ownMessage, el => el.innerText);
     expect(ownMessage).toEqual(content);
   }, 15000);
@@ -601,34 +453,7 @@ describe('Demo red force screen interface', () => {
       content: 'Message example from Red',
     };
     await delays.preTest();
-    await page.waitForSelector(selectors.channelContainer);
-    const forceId = await page.$eval(selectors.channelContainer, el => el.dataset.force);
-    const channelId = await page.$eval(anchors.channelAllChat, el => el.dataset.channelId);
-    await page.evaluate(async ({selectors, forceId, channelId}) => {
-      const component = window.channelTabsContainer[forceId];
-      if( component ) {
-        await (() => {
-          component.setActiveTab(channelId);
-        })();
-      }
-    }, {selectors, forceId, channelId});
-    await page.waitForSelector(selectors.activeButtonTab);
-    await page.waitForFunction(selectors => {
-      return document.querySelector(selectors.activeButtonTab).innerText.match(/All chat/gi);
-    }, {}, selectors);
-    await page.waitForSelector(anchors.channelAllChat, { visible: true });
-    await page.waitForSelector(selectors.messageCreatorTrigger, { visible: true });
-    await page.click(selectors.messageCreatorTrigger);
-    await page.waitForSelector(selectors.messageCreatorInner, { visible: true });
-    await page.waitForSelector(selectors.messageInput);
-    await page.type(selectors.messageInput, dummy.content);
-    await page.waitForFunction(({selectors, content}) => {
-      return document.querySelector(selectors.messageInput).value === content;
-    }, {}, {selectors, content: dummy.content});
-    await page.waitForSelector(selectors.sendMessage);
-    await page.click(selectors.sendMessage);
-    await networks.postNewMessage();
-    await page.click(selectors.messageCreatorTrigger);
+    await factory.sendAllChatMessage(anchors, selectors, dummy);
     await page.waitForSelector(selectors.latestMessage);
     latestMessage = await page.$eval(selectors.latestMessage, el => el.innerText);
     expect(latestMessage).toEqual(dummy.content);
