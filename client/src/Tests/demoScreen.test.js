@@ -459,3 +459,94 @@ describe('Demo red force screen interface', () => {
     expect(latestMessage).toEqual(dummy.content);
   }, 15000);
 });
+
+describe('Demo blue force screen interface', () => {
+  test('Enter wargame', async () => {
+    const anchors = {
+      tab: '#demo-player-3',
+      wargameSelection: '#custom-select-wargame-selection',
+    };
+    const selectors = {
+      play: `${anchors.tab} button[name=play]`,
+      enter: `${anchors.tab} button[name="enter-game"]`,
+      selectWargameToggle: `${anchors.wargameSelection} .react-select__input`,
+      selectWargameMenu: `${anchors.wargameSelection} .react-select__menu`,
+      selectWargameOptions: `${anchors.wargameSelection} .react-select__option`,
+      passwordButtons: `${anchors.tab} [data-qa-force-name="Blue"] .btn`,
+    };
+    await delays.preTest();
+    await page.waitForSelector(anchors.tab);
+    await factory.enterGame(selectors, wargameAttrs.title, 'CO');
+  }, 15000);
+
+  test('Skip wargame tour', async () => {
+    let tour;
+    const anchors = {
+      tab: '#demo-player-3',
+      tour: '#___reactour',
+    };
+    const selectors = {
+      close: `${anchors.tour} [data-tour-elem="controls"] + button`
+    };
+    await delays.preTest();
+    await page.waitForSelector(anchors.tour);
+    await page.waitForSelector(selectors.close);
+    await page.click(selectors.close);
+    tour = await page.$(anchors.tour);
+    expect(tour).toBeNull();
+  }, 15000);
+
+  test('Send game admin message', async () => {
+    let ownMessage;
+    const anchors = {
+      tab: '#demo-player-3',
+      get outGameFeed() {
+        return `${this.tab} .out-of-game-feed`;
+      },
+      get getAdmin() {
+        return `${this.outGameFeed} .contain-game-admin`;
+      }
+    };
+    const selectors = {
+      messageInput: `${anchors.outGameFeed} .new-message-creator [name="root[content]"]`,
+      ownMessage: `${anchors.getAdmin} .own-message:first-of-type .message-item-content`,
+      buttonSendMessage: `${anchors.getAdmin} .new-message-creator [name="send"]`,
+    };
+    const content = 'Hello from Blue';
+    await delays.preTest();
+    await page.waitForSelector(anchors.outGameFeed);
+    await factory.sendGameAdminMessage(selectors, content);
+    ownMessage = await page.$eval(selectors.ownMessage, el => el.innerText);
+    expect(ownMessage).toEqual(content);
+  }, 15000);
+
+  test('Send message on All chat channels', async () => {
+    let latestMessage;
+    const anchors = {
+      tab: '#demo-player-3',
+      get inGameFeed() {
+        return `${this.tab} .in-game-feed`;
+      },
+      get channelAllChat() {
+        return `${this.inGameFeed} .tab-content-all-chat`;
+      },
+    };
+    const selectors = {
+      channelContainer: `${anchors.inGameFeed} .contain-channel-tabs`,
+      activeButtonTab: `${anchors.inGameFeed} .flexlayout__tab_button--selected .flexlayout__tab_button_content`,
+      messageCreatorTrigger: `${anchors.channelAllChat} .new-message-creator .Collapsible__trigger`,
+      messageCreatorInner: `${anchors.channelAllChat} .new-message-creator .Collapsible__contentInner`,
+      messageInput: `${anchors.channelAllChat} .Collapsible__contentInner [name="root[content]"]`,
+      sendMessage: `${anchors.channelAllChat} .Collapsible__contentInner [name="send"]`,
+      latestMessage: `${anchors.channelAllChat} .message-item-unread:first-of-type .message-title`,
+    };
+    const dummy = {
+      content: 'Message example from Blue',
+    };
+    await delays.preTest();
+    await factory.sendAllChatMessage(anchors, selectors, dummy);
+    await page.waitForSelector(selectors.latestMessage);
+    latestMessage = await page.$eval(selectors.latestMessage, el => el.innerText);
+    expect(latestMessage).toEqual(dummy.content);
+  }, 15000);
+});
