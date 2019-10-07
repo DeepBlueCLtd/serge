@@ -76,7 +76,7 @@ class JsonCreator extends Component {
   render() {
     return (
       <>
-        <div className="form-group" id="message-creator" ref={this.editorPreviewRef}></div>
+        <div className="form-group message-creator" ref={this.editorPreviewRef}></div>
         {
           this.props.privateMessage && (
             <div className="flex-content form-group">

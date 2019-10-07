@@ -2,6 +2,7 @@ import React, { Component } from "react";
 import { connect } from "react-redux";
 import _ from "lodash";
 import Tour from "reactour";
+import Select from "react-select";
 import lineBreak from "../Helpers/splitNewLineBreak";
 import {
   getWargame,
@@ -23,7 +24,7 @@ import DropdownInput from "../Components/Inputs/DropdownInput";
 import TextInput from "../Components/Inputs/TextInput";
 import GameChannels from "./GameChannels";
 import { PlayerStateContext } from "../Store/PlayerUi";
-import '../scss/App.scss';
+import "../scss/App.scss";
 
 class PlayerUi extends Component {
   static contextType = PlayerStateContext;
@@ -43,6 +44,10 @@ class PlayerUi extends Component {
     this.props.dispatch(getSergeGameInformation());
   };
 
+  componentDidMount() {
+    window.channelTabsContainer = window.channelTabsContainer || {};
+  }
+
   componentDidUpdate() {
     const [ state ] = this.context;
     if(state.selectedForce && state.selectedRole) {
@@ -58,7 +63,7 @@ class PlayerUi extends Component {
   updateSelectedWargame = (selectedWargame) => {
     const [ , dispatch ] = this.context;
     this.setState({selectedWargame});
-    getWargame(selectedWargame)(dispatch);
+    getWargame(selectedWargame.value)(dispatch);
   };
 
   goBack = () => {
@@ -181,7 +186,7 @@ class PlayerUi extends Component {
         content: () => (
           <div>
             Drag and drop a tab to create a new column and re-organize your channels. And use the vertical bars to resize the area occupied by channels.
-            <span className="link link--noIcon" onClick={this.closeTour}>Close the tour</span>
+            <span className="link link--noIcon" onClick={this.closeTour} data-qa-type="close-tour">Close the tour</span>
           </div>
         ),
       },
@@ -191,7 +196,7 @@ class PlayerUi extends Component {
       return (
         <div className="flex-content-wrapper">
           <div className="pre-start-screen">
-            <button name="initiate game" className="btn btn-action btn-action--primary" onClick={this.initiateGameplay}>Initiate Game</button>
+            <button name="initiate-game" className="btn btn-action btn-action--primary" onClick={this.initiateGameplay}>Initiate Game</button>
           </div>
         </div>
       )
@@ -236,11 +241,16 @@ class PlayerUi extends Component {
           {!state.selectedForce && !state.selectedRole &&
             <div className={`flex-content--center ${this.state.selectedWargame && state.showAccessCodes ? 'has-demo-passwords': ''}`}>
               <h1>Set wargame</h1>
-              <DropdownInput
-                data={this.state.selectedWargame}
-                updateStore={this.updateSelectedWargame}
-                selectOptions={this.props.wargame.wargameList.map((wargame) => ({option: wargame.title, value: wargame.name}))}
-              />
+              <div id="custom-select-wargame-selection">
+                <Select
+                  name="wargame-selection"
+                  value={this.state.selectedWargame}
+                  className="react-select"
+                  classNamePrefix="react-select"
+                  options={this.props.wargame.wargameList.map((wargame) => ({label: wargame.title, value: wargame.name}))}
+                  onChange={this.updateSelectedWargame}
+                />
+              </div>
               <div className="flex-content">
                 <TextInput
                   label="Access code"
@@ -253,20 +263,30 @@ class PlayerUi extends Component {
               {this.state.selectedWargame && state.showAccessCodes &&
                 <div className="demo-passwords">
                   <h3>Not visible in production</h3>
-                  {this.roleOptions().map((force) => {
-                    return (
-                      <React.Fragment key={force.name}>
-                        <h4>{force.name}</h4>
-                        <ul>
-                          {force.roles.map((role) => (<li key={role.name} onClick={this.setRolePasswordDemo.bind(this, role.password)}>{role.name}</li>))}
-                        </ul>
-                      </React.Fragment>
-                    )
-                  })
-                  }
+                  <ul>
+                    {this.roleOptions().map((force) => {
+                      return (
+                        <li key={force.name} className="list-item-demo-passwords">
+                          <h4>{force.name}</h4>
+                          <ul data-qa-force-name={force.name}>
+                            {
+                              force.roles.map((role) => (
+                                <li key={role.name}>
+                                  <a href="javascript:" onClick={this.setRolePasswordDemo.bind(this, role.password)} className="btn btn-sm btn-primary">
+                                    {role.name}
+                                  </a>
+                                </li>
+                              ))
+                            }
+                          </ul>
+                        </li>
+                      )
+                    })
+                    }
+                  </ul>
                 </div>
               }
-              <button name="add" disabled={!this.state.rolePassword} className="btn btn-action btn-action--primary" onClick={this.checkPassword}>Enter</button>
+              <button name="enter-game" disabled={!this.state.rolePassword} className="btn btn-action btn-action--primary" onClick={this.checkPassword}>Enter</button>
             </div>
           }
         </div>

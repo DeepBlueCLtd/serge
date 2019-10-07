@@ -40,18 +40,20 @@ class InsightsChannel extends Component {
     const [ state ] = this.context;
 
     return (
-      <MessagesListRenderProp
-        curChannel={"feedback_messages"}
-        messages={state.feedbackMessages}
-        userId={`${state.wargameTitle}-${state.selectedForce}-${state.selectedRole}`}
-        allMarkedRead={this.state.allMarkedRead}
-        render={messages => (
-          <MessagesListInsightsChannel
-            messages={messages}
-            markAllAsRead={this.markAllAsRead}
+        <div className="contain-game-insights">
+          <MessagesListRenderProp
+            curChannel={"feedback_messages"}
+            messages={state.feedbackMessages}
+            userId={`${state.wargameTitle}-${state.selectedForce}-${state.selectedRole}`}
+            allMarkedRead={this.state.allMarkedRead}
+            render={messages => (
+              <MessagesListInsightsChannel
+                messages={messages}
+                markAllAsRead={this.markAllAsRead}
+              />
+            )}
           />
-        )}
-      />
+        </div>
     );
   }
 }

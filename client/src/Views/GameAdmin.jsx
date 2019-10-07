@@ -41,7 +41,7 @@ class GameAdmin extends Component {
   render() {
     const [ state ] = this.context;
     return (
-      <>
+      <div className="contain-game-admin">
         <MessagesListRenderProp
           curChannel={CHAT_CHANNEL_ID}
           messages={state.chatChannel.messages}
@@ -61,7 +61,7 @@ class GameAdmin extends Component {
               schema={state.chatChannel.template}
           />
         </div>
-      </>
+      </div>
     );
   }
 }

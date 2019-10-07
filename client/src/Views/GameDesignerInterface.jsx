@@ -65,7 +65,7 @@ class GameDesignerInterface extends Component {
     if (this.props.wargame.adminNotLoggedIn) {
       return (
         <div id="umpire" className="flex-content-wrapper flex-landing-screen">
-          <div className="flex-content flex-content--center">
+          <div className="flex-content flex-content--center" id="form-login-admin">
             <h2>Password</h2>
             <TextInput
               className="material-input"
@@ -84,7 +84,7 @@ class GameDesignerInterface extends Component {
       <div id="umpire" className="flex-content-wrapper flex-transparent flex-jc-center">
         <SidebarAdmin activeTab={ADMIN_ROUTE} />
         <div className="flex-content flex-content--big flex-content--last">
-          <h2>Games</h2>
+          <h2 id="page-title">Games</h2>
           <div className="btn-group game-designer-action">
             <Link
                 href={GAME_SETUP_ROUTE}

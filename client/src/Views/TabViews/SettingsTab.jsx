@@ -99,15 +99,11 @@ class SettingsTab extends Component {
   };
 
   render() {
-
-    // let spatialRepresentationOptions = [{value: "opt1", option: "opt1"}, {value: "opt2", option: "opt2"}, {value: "opt3", option: "opt3"}]
-    // let turnStrategyOptions = [{value: "opt1", option: "opt1"}, {value: "opt2", option: "opt2"}, {value: "opt3", option: "opt3"}]
-
     return (
-      <>
+      <div id="game-setup-tab-settings">
         <div className="flex-content-wrapper">
           <Row className="flex-content--rowend flex-content--fill">
-            <span className="link link--noIcon" onClick={this.saveSettings}>save Overview</span>
+            <span className="link link--noIcon" onClick={this.saveSettings} data-qa-type="submit">Save Overview</span>
           </Row>
         </div>
         <div className="flex-content-wrapper settingsTab">
@@ -115,25 +111,13 @@ class SettingsTab extends Component {
             <label htmlFor="" className="material-label">Game description &amp; objectives</label>
             <TextArea
               className="material-input"
+              name="wargame-overview-desc"
               updateStore={this.updateDescription}
               data={this.props.wargame.data[this.props.wargame.currentTab].gameDescription}
             />
           </div>
 
           <div className="flex-content flex-content--right50">
-            {/*<Row>*/}
-              {/*<div className="flex-content settings-title">*/}
-                {/*<p className="heading--sml">Spatial Representation</p>*/}
-              {/*</div>*/}
-              {/*<div className="flex-content flex-content--fill">*/}
-                {/*<DropdownInput*/}
-                  {/*updateStore={this.updateSpatialRepresentation}*/}
-                  {/*selectOptions={spatialRepresentationOptions}*/}
-                  {/*placeholder="Select spatial representation"*/}
-                  {/*data={this.props.wargame.data[this.props.wargame.currentTab].spatialRepresentation}*/}
-                {/*/>*/}
-              {/*</div>*/}
-            {/*</Row>*/}
 
             <Row>
               <div className="flex-content flex-content--sml">
@@ -165,13 +149,6 @@ class SettingsTab extends Component {
 
             <Row>
               <div className="flex-content flex-content--sml">
-                {/*<TextInput*/}
-                  {/*className="material-input"*/}
-                  {/*label="Display time warning at.. (mins)"*/}
-                  {/*updateStore={this.updateTimeWarning}*/}
-                  {/*options={{ numInput: true }}*/}
-                  {/*data={this.props.wargame.data[this.props.wargame.currentTab].timeWarning}*/}
-                {/*/>*/}
                 <TextInputMasked
                   mask="11 11 11"
                   name="time warning"
@@ -183,21 +160,6 @@ class SettingsTab extends Component {
                 />
               </div>
             </Row>
-
-            {/*<Row>*/}
-              {/*<div className="flex-content settings-title">*/}
-                {/*<p className="heading--sml">Turn Strategy</p>*/}
-              {/*</div>*/}
-              {/*<div className="flex-content flex-content--fill">*/}
-                {/*<DropdownInput*/}
-                  {/*updateStore={this.updateTurnStrategy}*/}
-                  {/*selectOptions={turnStrategyOptions}*/}
-                  {/*placeholder="Not implemented yet"*/}
-                  {/*data={this.props.wargame.data[this.props.wargame.currentTab].turnStrategy}*/}
-                  {/*// disabled={true}*/}
-                {/*/>*/}
-              {/*</div>*/}
-            {/*</Row>*/}
 
             <Row>
               <label htmlFor="" className="material-label">Start time</label>
@@ -225,7 +187,7 @@ class SettingsTab extends Component {
             </Row>
           </div>
         </div>
-      </>
+      </div>
     );
   }
 }

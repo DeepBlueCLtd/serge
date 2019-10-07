@@ -48,7 +48,7 @@ class TabbedView extends Component {
           { this.state.tabs.map((tabName, i) => (
               <li key={tabName}
                   onClick={this.changeTab.bind(this, this.state.tabs[i])}
-                  className={classNames({ "active-tab": tabName === this.state.activeTab })}
+                  className={classNames({ [`tab-${tabName}`]: true, "active-tab": tabName === this.state.activeTab })}
               >
                 {tabName}
                 { this.props.wargame.data[tabName].dirty ?
