@@ -11,3 +11,4 @@
 .env.development
 /daemon
 /log.txt
+/pkg-builds

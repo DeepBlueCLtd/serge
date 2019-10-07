@@ -35,6 +35,10 @@ change "homepage" to `http://localhost:8080/client/build` from `https://serge-de
 ### for heroku
 ensure line 6&7 commented in `client/src/api/consts.js`
 
-change "homepage" to `https://serge-dev.herokuapp.com/client/build` from `http://localhost:8080/client/build` in `client/package.json` 
+change "homepage" to `https://serge-dev.herokuapp.com/client/build` from `http://localhost:8080/client/build` in `client/package.json`
 
 push to heroku
+
+### Build executable files
+In project root directory
+Run `npm run pkg-build` to create a server with last build client version and server.
