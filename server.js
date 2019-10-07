@@ -1,105 +1,116 @@
-require('events').EventEmitter.defaultMaxListeners = 82;
-const express = require('express');
-const bodyParser = require('body-parser');
-const path = require('path');
-const uniqid = require('uniqid');
-const PouchDB = require('pouchdb-core')
-  .plugin(require('pouchdb-adapter-node-websql'))
-  .plugin(require('pouchdb-adapter-http'))
-  .plugin(require('pouchdb-mapreduce'))
-  .plugin(require('pouchdb-replication'))
-  .defaults({
-    prefix: 'db/',
-    adapter: 'websql'
-  });
+const runServer = (eventEmmiterMaxListeners, pouchOptions, corsOptions, dbDir, imgDir, port, remoteServer) => {
 
-const fs = require('fs');
+  require('events').EventEmitter.defaultMaxListeners = eventEmmiterMaxListeners;
+  const express = require('express');
+  const bodyParser = require('body-parser');
+  const path = require('path');
+  const uniqid = require('uniqid');
+  const ip = require("ip");
 
-require('pouchdb-all-dbs')(PouchDB);
+  const PouchDB = require('pouchdb-core')
+    .plugin(require('pouchdb-adapter-node-websql'))
+    .plugin(require('pouchdb-adapter-http'))
+    .plugin(require('pouchdb-mapreduce'))
+    .plugin(require('pouchdb-replication'))
+    .defaults(pouchOptions);
 
-const cors = require('cors');
+  const fs = require('fs');
 
-const app = express();
+  require('pouchdb-all-dbs')(PouchDB);
 
-app.use(cors());
+  const cors = require('cors');
 
-let dbDir = './db';
+  const app = express();
 
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir);
-}
+  const clientPublicPath = "/client/build";
 
-let imgDir = './img';
-if (!fs.existsSync(imgDir)) {
-  fs.mkdirSync(imgDir);
-}
+  app.use(cors(corsOptions));
 
-app.use('/db', require('express-pouchdb')(PouchDB));
+  if (!fs.existsSync(dbDir)) {
+    fs.mkdirSync(dbDir);
+  }
 
-app.get('/allDbs', (req, res) => {
-  PouchDB.allDbs()
-    .then((dbs) => {
-      res.send(dbs);
-    })
-});
+  if (!fs.existsSync(imgDir)) {
+    fs.mkdirSync(imgDir);
+  }
 
-app.get('/clearAll', (req, res) => {
-  PouchDB.allDbs()
-    .then((dbs) => {
-      dbs.forEach((db) => {
-        new PouchDB(db).destroy();
+  app.use('/db', require('express-pouchdb')(PouchDB));
+
+  app.get('/allDbs', (req, res) => {
+    PouchDB.allDbs()
+      .then((dbs) => {
+        res.send(dbs);
       })
-    })
-    .then(() => {
-      res.send();
-    })
-});
-
-app.get('/deleteDb', (req, res) => {
-  fs.unlink('db/'+req.query.db, (err) => {
-    console.log(err);
-    if (err) {
-      res.status(500).send();
-    } else {
-      res.status(200).send();
-    }
   });
-});
 
-app.get('/getIp', (req, res) => {
-  res.status(200).send({ip: req.ip});
-});
+  app.get('/clearAll', (req, res) => {
+    PouchDB.allDbs()
+      .then((dbs) => {
+        dbs.forEach((db) => {
+          new PouchDB(db).destroy();
+        })
+      })
+      .then(() => {
+        res.send();
+      })
+  });
 
-app.use('/saveIcon', bodyParser.raw({type: 'image/png', limit: '20kb'}));
-app.post('/saveIcon', (req, res) => {
+  app.get('/deleteDb', (req, res) => {
+    fs.unlink('db/'+req.query.db, (err) => {
+      console.log(err);
+      if (err) {
+        res.status(500).send();
+      } else {
+        res.status(200).send();
+      }
+    });
+  });
 
-  let image = `${imgDir}/${uniqid.time('icon-')}.png`;
+  app.get('/getIp', (req, res) => {
+    res.status(200).send({ip: req.ip});
+  });
 
-  fs.writeFile(image, req.body, (err) => console.log(err));
+  app.use('/saveIcon', bodyParser.raw({type: 'image/png', limit: '20kb'}));
+  app.post('/saveIcon', (req, res) => {
 
-  res.status(200).send({path: image});
+    let image = `${imgDir}/${uniqid.time('icon-')}.png`;
 
-});
+    fs.writeFile(image, req.body, (err) => console.log(err));
 
-app.use('/saveLogo', bodyParser.raw({type: 'image/png', limit: '100kb'}));
-app.post('/saveLogo', (req, res) => {
+    res.status(200).send({path: image});
 
-  let image = `${imgDir}/${uniqid.time('logo-')}.png`;
+  });
 
-  fs.writeFile(image, req.body, (err) => console.log(err));
+  app.use('/saveLogo', bodyParser.raw({type: 'image/png', limit: '100kb'}));
+  app.post('/saveLogo', (req, res) => {
 
-  res.status(200).send({path: image});
+    let image = `${imgDir}/${uniqid.time('logo-')}.png`;
 
-});
+    fs.writeFile(image, req.body, (err) => console.log(err));
 
+    res.status(200).send({path: image});
 
-app.use(express.static(path.join(__dirname)));
+  });
 
-app.get('/*', (req, res) => {
-  res.sendFile(path.join(__dirname + '/client/build/index.html'));
-});
+  if(remoteServer) {
+    app.get(clientPublicPath + '/gconfig.js', (req, res) => {
+      res.type('.js').send(`
+        window.G_CONFIG = {
+          REACT_APP_SERVER_PATH: "${remoteServer}"
+        }
+      `);
+    });
+  }
 
-const port = process.env.PORT || 8080;
-app.listen(port);
+  app.use(express.static(path.join(__dirname)));
 
-console.log('App is listening on port ' + port);
+  app.get('/*', (req, res) => {
+    res.sendFile(path.join(__dirname + clientPublicPath + '/index.html'));
+  });
+
+  app.listen(port);
+
+  console.log(`App is listening on ${ip.address()}:${port}`);
+}
+
+module.exports = runServer;
