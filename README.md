@@ -1,4 +1,5 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+### RETIRED
+This repo has been retired, Serge is now being maintained at: https://github.com/serge-web/serge
 
 ## Serge
 
