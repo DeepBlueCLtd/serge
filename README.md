@@ -1,5 +1,5 @@
 ### RETIRED
-This repo has been retired, Serge is now being maintained at: https://github.com/serge-web/serge
+Serge has moved and is now being maintained at: https://github.com/serge-web/serge
 
 ## Serge
 
